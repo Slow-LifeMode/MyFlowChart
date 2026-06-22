@@ -1,0 +1,66 @@
+﻿<Window x:Class="MyFlowChart.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:MyFlowChart.Controls"
+        mc:Ignorable="d"
+        Title="MyFlowChart Demo" Height="620" Width="980"
+        MinHeight="520" MinWidth="820"
+        FontFamily="Microsoft YaHei"
+        Background="#EEF3F1">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Margin="0,0,0,12"
+                Padding="12"
+                Background="#FFFFFF"
+                BorderBrush="#DDE5E3"
+                BorderThickness="1"
+                CornerRadius="6">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#1E2C2A"
+                               Text="流程图控件 Demo" />
+                    <TextBlock Margin="0,4,0,0"
+                               FontSize="12"
+                               Foreground="#687975"
+                               Text="拖拽左侧算子到右侧流程区域，点击启动后按竖向顺序运行。" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button x:Name="btnStart"
+                            Width="86"
+                            Height="34"
+                            Margin="0,0,8,0"
+                            Click="btnStart_Click"
+                            Content="启动" />
+                    <Button x:Name="btnStop"
+                            Width="86"
+                            Height="34"
+                            Click="btnStop_Click"
+                            Content="停止"
+                            IsEnabled="False" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <controls:OperatorPaletteControl Grid.Column="0" />
+            <controls:FlowChartControl x:Name="flowChart" Grid.Column="2" />
+        </Grid>
+    </Grid>
+</Window>

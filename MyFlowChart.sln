@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35828.75 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFlowChart", "MyFlowChart.csproj", "{8527BF21-E17F-4D7B-9537-3C0F7786AC29}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8527BF21-E17F-4D7B-9537-3C0F7786AC29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8527BF21-E17F-4D7B-9537-3C0F7786AC29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8527BF21-E17F-4D7B-9537-3C0F7786AC29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8527BF21-E17F-4D7B-9537-3C0F7786AC29}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EDE1C5AF-A944-4A84-B770-94019FA00698}
+	EndGlobalSection
+EndGlobal

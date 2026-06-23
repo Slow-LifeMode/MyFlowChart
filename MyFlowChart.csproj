@@ -83,10 +83,15 @@
     </Compile>
     <Compile Include="Models\BindableBase.cs" />
     <Compile Include="Models\DragOperatorData.cs" />
+    <Compile Include="Models\FlowBranch.cs" />
     <Compile Include="Models\FlowExecutionContext.cs" />
+    <Compile Include="Models\FlowBlockKind.cs" />
     <Compile Include="Models\FlowNode.cs" />
     <Compile Include="Models\FlowNodeStatus.cs" />
+    <Compile Include="Models\FlowOperator.cs" />
     <Compile Include="Models\OperatorDefinition.cs" />
+    <Compile Include="Models\RelayCommand.cs" />
+    <Compile Include="ViewModels\MainWindowViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

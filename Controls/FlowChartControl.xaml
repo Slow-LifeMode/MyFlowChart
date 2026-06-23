@@ -10,103 +10,335 @@
              d:DesignWidth="650"
              Focusable="True">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <ContextMenu x:Key="ConnectorMenu"
+                     x:Shared="False">
+            <MenuItem Header="添加算子块"
+                      Tag="OperatorBlock"
+                      Click="AddBlockMenuItem_Click">
+                <MenuItem.Icon>
+                    <Rectangle Width="14"
+                               Height="10"
+                               Fill="#FFFFFF"
+                               Stroke="#58D9C0"
+                               StrokeThickness="1" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="添加Goto块"
+                      Tag="Goto"
+                      Click="AddBlockMenuItem_Click">
+                <MenuItem.Icon>
+                    <Path Width="14"
+                          Height="12"
+                          Data="M 0 6 L 6 0 L 6 4 L 14 4 L 14 8 L 6 8 L 6 12 Z"
+                          Fill="#58D9C0"
+                          Stretch="Fill" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="添加分支块"
+                      Tag="Switch"
+                      Click="AddBlockMenuItem_Click">
+                <MenuItem.Icon>
+                    <Path Width="14"
+                          Height="10"
+                          Data="M 0 5 L 7 0 L 14 5 L 7 10 Z"
+                          Fill="#FFFFFF"
+                          Stroke="#58D9C0"
+                          StrokeThickness="1"
+                          Stretch="Fill" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="添加线程块"
+                      Tag="Thread"
+                      Click="AddBlockMenuItem_Click">
+                <MenuItem.Icon>
+                    <Path Width="14"
+                          Height="10"
+                          Data="M 0 0 L 14 0 L 14 7 L 7 10 L 0 7 Z"
+                          Fill="#FFFFFF"
+                          Stroke="#58D9C0"
+                          StrokeThickness="1"
+                          Stretch="Fill" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="导入块"
+                      IsEnabled="False">
+                <MenuItem.Icon>
+                    <Path Width="14"
+                          Height="14"
+                          Data="M 1 8 L 1 13 L 13 13 L 13 8 M 7 1 L 7 9 M 3 5 L 7 1 L 11 5"
+                          Stroke="#58D9C0"
+                          StrokeThickness="2"
+                          Stretch="Fill" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="粘贴块"
+                      Tag="Paste"
+                      Click="PasteBlockMenuItem_Click">
+                <MenuItem.Icon>
+                    <Rectangle Width="12"
+                               Height="14"
+                               Fill="#E5E5E5"
+                               Stroke="#B8B8B8"
+                               StrokeThickness="1" />
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
 
         <DataTemplate x:Key="FlowNodeTemplate"
                       DataType="{x:Type models:FlowNode}">
-            <StackPanel Width="190"
-                        AllowDrop="True"
-                        Cursor="Arrow"
-                        DragOver="Node_DragOver"
-                        Drop="Node_Drop">
+            <StackPanel Width="{Binding TemplateWidth}">
                 <Border x:Name="NodeBox"
-                        Width="190"
+                        Width="{Binding NodeDisplayWidth}"
                         Height="54"
+                        AllowDrop="True"
+                        HorizontalAlignment="Center"
                         Background="#FFFFFF"
                         BorderBrush="#CBD7D4"
                         BorderThickness="1"
                         CornerRadius="4"
+                        Cursor="Hand"
+                        DragOver="NodeElement_DragOver"
+                        Drop="NodeElement_Drop"
+                        MouseLeftButtonDown="NodeElement_MouseLeftButtonDown"
                         SnapsToDevicePixels="True">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="34" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="58" />
-                        </Grid.ColumnDefinitions>
+                        <Grid x:Name="NormalBlockContent">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="34" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="58" />
+                            </Grid.ColumnDefinitions>
 
-                        <Border x:Name="StatusStrip"
-                                Background="#38D99A"
-                                CornerRadius="4,0,0,4" />
+                            <Border x:Name="StatusStrip"
+                                    Background="#38D99A"
+                                    CornerRadius="4,0,0,4" />
 
-                        <Border Grid.Column="1"
-                                Width="24"
-                                Height="24"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Background="#EEF4F2"
-                                CornerRadius="12">
+                            <Border Grid.Column="1"
+                                    Width="24"
+                                    Height="24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="#EEF4F2"
+                                    CornerRadius="12">
+                                <TextBlock x:Name="SequenceText"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="#51625F"
+                                           Text="{Binding Sequence, StringFormat={}{0:00}}" />
+                            </Border>
+
+                            <StackPanel Grid.Column="2"
+                                        Margin="2,0,8,0"
+                                        VerticalAlignment="Center">
+                                <TextBlock FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="#22302D"
+                                           Text="{Binding DisplayName}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="10"
+                                           Foreground="#7A8C88"
+                                           Text="{Binding OperatorCountText}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center">
+                                <Border x:Name="StatusPill"
+                                        Height="20"
+                                        Background="#EEF2F1"
+                                        CornerRadius="10">
+                                    <TextBlock HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               FontSize="10"
+                                               Foreground="#51625F"
+                                               Text="{Binding StatusText}" />
+                                </Border>
+                                <TextBlock Margin="0,3,0,0"
+                                           HorizontalAlignment="Center"
+                                           FontSize="9"
+                                           Foreground="#8A9B97"
+                                           Text="{Binding ElapsedMilliseconds, StringFormat={}{0:0} ms}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid x:Name="FixedBlockContent"
+                              Visibility="Collapsed">
+                            <Path x:Name="StartIcon"
+                                  Width="24"
+                                  Height="26"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Data="M 0 0 L 24 13 L 0 26 Z"
+                                  Fill="#52D69C"
+                                  Stretch="Fill"
+                                  Visibility="Collapsed" />
+                            <Rectangle x:Name="EndIcon"
+                                       Width="15"
+                                       Height="15"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Fill="#E94444"
+                                       RadiusX="2"
+                                       RadiusY="2"
+                                       Visibility="Collapsed" />
+                        </Grid>
+
+                        <Grid x:Name="SpecialBlockContent"
+                              Visibility="Collapsed">
+                            <Path x:Name="SpecialBlockShape"
+                                  Width="120"
+                                  Height="36"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Data="M 0 0 L 120 0 L 120 27 L 92 36 L 0 36 Z"
+                                  Fill="#FFFFFF"
+                                  Stroke="#58D9C0"
+                                  StrokeThickness="1"
+                                  Stretch="Fill" />
                             <TextBlock HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
-                                       FontSize="11"
-                                       FontWeight="SemiBold"
-                                       Foreground="#51625F"
-                                       Text="{Binding Sequence, StringFormat={}{0:00}}" />
-                        </Border>
-
-                        <StackPanel Grid.Column="2"
-                                    Margin="2,0,8,0"
-                                    VerticalAlignment="Center">
-                            <TextBlock FontSize="13"
-                                       FontWeight="SemiBold"
+                                       FontSize="13"
                                        Foreground="#22302D"
                                        Text="{Binding DisplayName}"
                                        TextTrimming="CharacterEllipsis" />
-                            <TextBlock Margin="0,4,0,0"
-                                       FontSize="10"
-                                       Foreground="#7A8C88"
-                                       Text="{Binding OperatorName}"
-                                       TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="3"
-                                    Margin="0,0,8,0"
-                                    VerticalAlignment="Center">
-                            <Border x:Name="StatusPill"
-                                    Height="20"
-                                    Background="#EEF2F1"
-                                    CornerRadius="10">
-                                <TextBlock HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           FontSize="10"
-                                           Foreground="#51625F"
-                                           Text="{Binding StatusText}" />
-                            </Border>
-                            <TextBlock Margin="0,3,0,0"
-                                       HorizontalAlignment="Center"
-                                       FontSize="9"
-                                       Foreground="#8A9B97"
-                                       Text="{Binding ElapsedMilliseconds, StringFormat={}{0:0} ms}" />
-                        </StackPanel>
+                            <ItemsControl x:Name="ThreadBranchItems"
+                                          HorizontalAlignment="Center"
+                                          ItemsSource="{Binding Branches}"
+                                          Visibility="Collapsed">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:FlowBranch}">
+                                        <Grid Width="110"
+                                              Height="44">
+                                            <Path Width="106"
+                                                  Height="36"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Top"
+                                                  Data="M 0 0 L 106 0 L 106 27 L 80 36 L 0 36 Z"
+                                                  Fill="#FFFFFF"
+                                                  Stroke="#58D9C0"
+                                                  StrokeThickness="1"
+                                                  Stretch="Fill" />
+                                            <Border Width="26"
+                                                    Height="36"
+                                                    HorizontalAlignment="Left"
+                                                    Margin="2,0,0,0"
+                                                    Background="#58D99C">
+                                                <TextBlock HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="#112421"
+                                                           Text="{Binding Sequence}" />
+                                            </Border>
+                                            <TextBlock HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Margin="24,0,0,8"
+                                                       FontSize="12"
+                                                       Foreground="#22302D"
+                                                       Text="{Binding ConditionValue}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Ellipse Width="14"
+                                                     Height="14"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Bottom"
+                                                     Fill="#FFFFFF"
+                                                     Stroke="#58D9C0"
+                                                     StrokeThickness="1" />
+                                            <Line X1="51"
+                                                  Y1="37"
+                                                  X2="59"
+                                                  Y2="37"
+                                                  Stroke="#58D9C0"
+                                                  StrokeThickness="1" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
                     </Grid>
                 </Border>
 
                 <Grid x:Name="ConnectorPanel"
                       Width="190"
-                      Height="38">
+                      Height="38"
+                      HorizontalAlignment="Center">
                     <Line X1="95"
                           Y1="0"
                           X2="95"
-                          Y2="29"
+                          Y2="38"
                           Stroke="#AFC0BC"
-                          StrokeThickness="2" />
-                    <Path Width="14"
-                          Height="8"
+                          StrokeThickness="1" />
+                    <Path Width="8"
+                          Height="5"
+                          Margin="0,0,0,2"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Bottom"
-                          Data="M 0 0 L 7 8 L 14 0 Z"
+                          Data="M 0 0 L 4 5 L 8 0 Z"
                           Fill="#AFC0BC"
                           Stretch="Fill" />
+                    <Button x:Name="ConnectorAddButton"
+                            Width="28"
+                            Height="28"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#FFFFFF"
+                            BorderBrush="#1E9BFF"
+                            BorderThickness="2"
+                            Click="ConnectorAddButton_Click"
+                            ContextMenu="{StaticResource ConnectorMenu}"
+                            Cursor="Hand"
+                            Tag="{Binding}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="{x:Type Button}">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="14">
+                                    <Grid>
+                                        <Line X1="14"
+                                              Y1="6"
+                                              X2="14"
+                                              Y2="22"
+                                              Stroke="#1E9BFF"
+                                              StrokeThickness="2" />
+                                        <Line X1="6"
+                                              Y1="14"
+                                              X2="22"
+                                              Y2="14"
+                                              Stroke="#1E9BFF"
+                                              StrokeThickness="2" />
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type Grid}}}"
+                                                 Value="True">
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver"
+                                             Value="True">
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </Grid>
             </StackPanel>
 
@@ -117,11 +349,107 @@
                             Property="Visibility"
                             Value="Collapsed" />
                 </DataTrigger>
-                <DataTrigger Binding="{Binding Status}"
-                             Value="{x:Static models:FlowNodeStatus.Running}">
+                <DataTrigger Binding="{Binding IsSelected}"
+                             Value="True">
                     <Setter TargetName="NodeBox"
                             Property="BorderBrush"
-                            Value="#3D7DFF" />
+                            Value="#1E9BFF" />
+                    <Setter TargetName="NodeBox"
+                            Property="BorderThickness"
+                            Value="2" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsStartBlock}"
+                             Value="True">
+                    <Setter TargetName="NodeBox"
+                            Property="Width"
+                            Value="76" />
+                    <Setter TargetName="NodeBox"
+                            Property="Height"
+                            Value="44" />
+                    <Setter TargetName="NodeBox"
+                            Property="CornerRadius"
+                            Value="17" />
+                    <Setter TargetName="NodeBox"
+                            Property="BorderBrush"
+                            Value="#52D69C" />
+                    <Setter TargetName="NormalBlockContent"
+                            Property="Visibility"
+                            Value="Collapsed" />
+                    <Setter TargetName="FixedBlockContent"
+                            Property="Visibility"
+                            Value="Visible" />
+                    <Setter TargetName="StartIcon"
+                            Property="Visibility"
+                            Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsEndBlock}"
+                             Value="True">
+                    <Setter TargetName="NodeBox"
+                            Property="Width"
+                            Value="42" />
+                    <Setter TargetName="NodeBox"
+                            Property="Height"
+                            Value="42" />
+                    <Setter TargetName="NodeBox"
+                            Property="CornerRadius"
+                            Value="21" />
+                    <Setter TargetName="NodeBox"
+                            Property="BorderBrush"
+                            Value="#FF4B4B" />
+                    <Setter TargetName="NormalBlockContent"
+                            Property="Visibility"
+                            Value="Collapsed" />
+                    <Setter TargetName="FixedBlockContent"
+                            Property="Visibility"
+                            Value="Visible" />
+                    <Setter TargetName="EndIcon"
+                            Property="Visibility"
+                            Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsGotoBlock}"
+                             Value="True">
+                    <Setter TargetName="NormalBlockContent"
+                            Property="Visibility"
+                            Value="Collapsed" />
+                    <Setter TargetName="SpecialBlockContent"
+                            Property="Visibility"
+                            Value="Visible" />
+                    <Setter TargetName="NodeBox"
+                            Property="BorderBrush"
+                            Value="#58D9C0" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSwitchBlock}"
+                             Value="True">
+                    <Setter TargetName="NormalBlockContent"
+                            Property="Visibility"
+                            Value="Collapsed" />
+                    <Setter TargetName="SpecialBlockContent"
+                            Property="Visibility"
+                            Value="Visible" />
+                    <Setter TargetName="NodeBox"
+                            Property="BorderBrush"
+                            Value="#58D9C0" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsThreadBlock}"
+                             Value="True">
+                    <Setter TargetName="NormalBlockContent"
+                            Property="Visibility"
+                            Value="Collapsed" />
+                    <Setter TargetName="SpecialBlockContent"
+                            Property="Visibility"
+                            Value="Visible" />
+                    <Setter TargetName="NodeBox"
+                            Property="BorderThickness"
+                            Value="0" />
+                    <Setter TargetName="SpecialBlockShape"
+                            Property="Visibility"
+                            Value="Collapsed" />
+                    <Setter TargetName="ThreadBranchItems"
+                            Property="Visibility"
+                            Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}"
+                             Value="{x:Static models:FlowNodeStatus.Running}">
                     <Setter TargetName="NodeBox"
                             Property="Background"
                             Value="#F2F7FF" />
@@ -134,9 +462,6 @@
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Status}"
                              Value="{x:Static models:FlowNodeStatus.OK}">
-                    <Setter TargetName="NodeBox"
-                            Property="BorderBrush"
-                            Value="#38D99A" />
                     <Setter TargetName="StatusStrip"
                             Property="Background"
                             Value="#38D99A" />
@@ -207,43 +532,22 @@
                         BorderThickness="1"
                         SnapsToDevicePixels="True">
                     <Grid x:Name="flowContentHost"
-                          Width="190"
-                          Height="166">
-                        <ItemsControl ItemsSource="{Binding Nodes, ElementName=Root}"
-                                      ItemTemplate="{StaticResource FlowNodeTemplate}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel HorizontalAlignment="Center"
-                                                VerticalAlignment="Top" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
-
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="15"
-                                   Foreground="#8A9B97"
-                                   Text="空流程">
-                            <TextBlock.Style>
-                                <Style TargetType="{x:Type TextBlock}">
-                                    <Setter Property="Visibility"
-                                            Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasNodes, ElementName=Root}"
-                                                     Value="True">
-                                            <Setter Property="Visibility"
-                                                    Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                          Width="1768"
+                          Height="1168">
+                        <Canvas x:Name="flowCanvas"
+                                Background="Transparent" />
                     </Grid>
                 </Border>
             </Grid>
         </ScrollViewer>
 
-        <Border x:Name="miniMap"
+        <Grid x:Name="miniMapShell"
+              Width="210"
+              Height="170"
+              Margin="0,0,14,14"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Bottom">
+            <Border x:Name="miniMap"
                 Width="190"
                 Height="150"
                 Margin="0,0,14,14"
@@ -284,44 +588,20 @@
                                                 ScaleY="1" />
                             </Border.RenderTransform>
                             <Grid x:Name="miniMapContentHost"
-                                  Width="190"
-                                  Height="166">
-                                <ItemsControl IsHitTestVisible="False"
-                                              ItemsSource="{Binding Nodes, ElementName=Root}"
-                                              ItemTemplate="{StaticResource FlowNodeTemplate}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel HorizontalAlignment="Center"
-                                                        VerticalAlignment="Top" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-
-                                <TextBlock HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           FontSize="15"
-                                           Foreground="#8A9B97"
-                                           Text="空流程">
-                                    <TextBlock.Style>
-                                        <Style TargetType="{x:Type TextBlock}">
-                                            <Setter Property="Visibility"
-                                                    Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding HasNodes, ElementName=Root}"
-                                                             Value="True">
-                                                    <Setter Property="Visibility"
-                                                            Value="Collapsed" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                  Width="1768"
+                                  Height="1168">
+                                <Canvas x:Name="miniMapCanvas"
+                                        IsHitTestVisible="False" />
                             </Grid>
                         </Border>
                     </Canvas>
 
                     <Canvas x:Name="miniMapOverlay"
-                            IsHitTestVisible="False">
+                            Background="Transparent"
+                            MouseLeftButtonDown="MiniMapOverlay_MouseLeftButtonDown"
+                            MouseMove="MiniMapOverlay_MouseMove"
+                            MouseLeftButtonUp="MiniMapOverlay_MouseLeftButtonUp"
+                            LostMouseCapture="MiniMapOverlay_LostMouseCapture">
                         <Rectangle x:Name="miniMapViewport"
                                    Fill="#334E6826"
                                    Stroke="#2D6CDF"
@@ -329,6 +609,20 @@
                     </Canvas>
                 </Grid>
             </Grid>
-        </Border>
+            </Border>
+
+            <Button x:Name="miniMapToggleButton"
+                    Width="22"
+                    Height="22"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Background="#FFFFFF"
+                    BorderBrush="#98AAA5"
+                    BorderThickness="1"
+                    Click="MiniMapToggleButton_Click"
+                    Content="⌄"
+                    Cursor="Hand"
+                    FontSize="12" />
+        </Grid>
     </Grid>
 </UserControl>

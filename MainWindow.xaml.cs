@@ -1,30 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace MyFlowChart
 {
-    /// <summary>
-    /// MainWindow.xaml 的交互逻辑
-    /// </summary>
     public partial class MainWindow : Window
     {
+        /// <summary>
+        /// 初始化主窗口并加载流程图界面。
+        /// </summary>
+        /// <returns>无返回值。</returns>
         public MainWindow()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// 启动当前流程图运行。
+        /// </summary>
+        /// <param name="sender">触发启动的按钮。</param>
+        /// <param name="e">按钮点击事件参数。</param>
+        /// <returns>无返回值。</returns>
         private async void btnStart_Click(object sender, RoutedEventArgs e)
         {
             if (flowChart.Nodes == null || flowChart.Nodes.Count == 0)
@@ -41,6 +35,12 @@ namespace MyFlowChart
             btnStop.IsEnabled = false;
         }
 
+        /// <summary>
+        /// 停止当前流程图运行。
+        /// </summary>
+        /// <param name="sender">触发停止的按钮。</param>
+        /// <param name="e">按钮点击事件参数。</param>
+        /// <returns>无返回值。</returns>
         private void btnStop_Click(object sender, RoutedEventArgs e)
         {
             flowChart.Stop();

@@ -1,14 +1,391 @@
-﻿<Window x:Class="MyFlowChart.MainWindow"
+<Window x:Class="MyFlowChart.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:MyFlowChart.Controls"
+        xmlns:models="clr-namespace:MyFlowChart.Models"
+        xmlns:viewModels="clr-namespace:MyFlowChart.ViewModels"
         mc:Ignorable="d"
-        Title="MyFlowChart Demo" Height="620" Width="980"
-        MinHeight="520" MinWidth="820"
+        Title="MyFlowChart Demo" Height="620" Width="1180"
+        MinHeight="520" MinWidth="960"
         FontFamily="Microsoft YaHei"
         Background="#EEF3F1">
+    <Window.DataContext>
+        <viewModels:MainWindowViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <Style x:Key="ToolButtonStyle"
+               TargetType="{x:Type Button}">
+            <Setter Property="Width"
+                    Value="45" />
+            <Setter Property="Height"
+                    Value="42" />
+            <Setter Property="Margin"
+                    Value="0,0,5,0" />
+            <Setter Property="Padding"
+                    Value="0" />
+            <Setter Property="FontSize"
+                    Value="12" />
+        </Style>
+
+        <DataTemplate x:Key="SelectedBlockTemplate"
+                      DataType="{x:Type models:FlowNode}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="38" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TabControl Grid.Row="0"
+                            BorderThickness="0"
+                            Background="#D5D7DA">
+                    <TabItem Header="算子块属性"
+                             IsSelected="True" />
+                    <TabItem Header="资源" />
+                </TabControl>
+
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="5,10,5,5">
+                        <Border Margin="0,0,0,8"
+                                Padding="10"
+                                Background="#FFFFFF"
+                                BorderBrush="#D5DCE0"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="112" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="算子块名" />
+                                <TextBox Grid.Column="1"
+                                         Height="32"
+                                         IsEnabled="{Binding IsConfigurable}"
+                                         Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                        </Border>
+
+                        <Border Margin="0,0,0,8"
+                                Padding="10"
+                                Background="#FFFFFF"
+                                BorderBrush="#D5DCE0"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="112" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="算子块备注" />
+                                <TextBox Grid.Column="1"
+                                         Height="32"
+                                         IsEnabled="{Binding IsConfigurable}"
+                                         Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                        </Border>
+
+                        <Border Margin="0,0,0,8"
+                                Padding="10"
+                                Background="#FFFFFF"
+                                BorderBrush="#D5DCE0"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="112" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="启用块" />
+                                <CheckBox Grid.Column="1"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          IsEnabled="{Binding IsConfigurable}"
+                                          IsChecked="{Binding IsEnabled}" />
+                            </Grid>
+                        </Border>
+
+                        <Border Margin="0,0,0,8"
+                                Padding="10"
+                                Background="#FFFFFF"
+                                BorderBrush="#D5DCE0"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="112" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="图像窗口" />
+                                <ComboBox Grid.Column="1"
+                                          Height="32"
+                                          IsEnabled="{Binding IsConfigurable}"
+                                          SelectedValuePath="Content"
+                                          SelectedValue="{Binding ImageWindowName}">
+                                    <ComboBoxItem Content="图像窗口1" />
+                                    <ComboBoxItem Content="图像窗口2" />
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <Border Padding="10"
+                                Background="#FFFFFF"
+                                BorderBrush="#D5DCE0"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Visibility="{Binding DataContext.ShowOperatorPanel, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock FontSize="13"
+                                           Text="算子列表" />
+
+                                <WrapPanel Grid.Row="1"
+                                           Margin="0,10,0,8">
+                                    <Button Content="编辑"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                    <Button Content="运行"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                    <Button Content="断点"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                    <Button Content="禁用"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                    <Button Content="复制"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                    <Button Content="剪切"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                    <Button Content="粘贴"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                    <Button Content="删除"
+                                            Style="{StaticResource ToolButtonStyle}" />
+                                </WrapPanel>
+
+                                <ListBox Grid.Row="2"
+                                         MinHeight="260"
+                                         BorderBrush="#D5DCE0"
+                                         BorderThickness="1"
+                                         ItemsSource="{Binding Operators}"
+                                         SelectedItem="{Binding SelectedOperator}">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="{x:Type ListBoxItem}">
+                                            <Setter Property="HorizontalContentAlignment"
+                                                    Value="Stretch" />
+                                            <Setter Property="Padding"
+                                                    Value="0" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:FlowOperator}">
+                                            <Border Height="58"
+                                                    Padding="8,6"
+                                                    BorderBrush="#E0E4E6"
+                                                    BorderThickness="0,0,0,1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="28" />
+                                                        <ColumnDefinition Width="22" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="34" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock VerticalAlignment="Center"
+                                                               Foreground="#222222"
+                                                               Text="{Binding Sequence}" />
+                                                    <Ellipse Grid.Column="1"
+                                                             Width="13"
+                                                             Height="13"
+                                                             VerticalAlignment="Center"
+                                                             Fill="#9AA3AD" />
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock FontSize="13"
+                                                                   Text="{Binding DisplayName}" />
+                                                        <TextBlock Margin="0,5,0,0"
+                                                                   FontSize="12"
+                                                                   Text="{Binding StatusText}" />
+                                                    </StackPanel>
+                                                    <Border Grid.Column="3"
+                                                            Width="18"
+                                                            Height="18"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center"
+                                                            Background="#28CFA8"
+                                                            CornerRadius="9">
+                                                        <TextBlock HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   FontSize="9"
+                                                                   Foreground="#FFFFFF"
+                                                                   Text="OK" />
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+
+                        <Border Padding="10"
+                                Background="#FFFFFF"
+                                BorderBrush="#D5DCE0"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Visibility="{Binding DataContext.ShowGotoPanel, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock FontSize="13"
+                                           Text="链接算子块" />
+                                <ComboBox Grid.Row="1"
+                                          Height="32"
+                                          Margin="0,10,0,0"
+                                          DisplayMemberPath="DisplayName"
+                                          ItemsSource="{Binding DataContext.GotoTargetNodes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                          SelectedValue="{Binding GotoTargetNodeId, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedValuePath="Id" />
+                            </Grid>
+                        </Border>
+
+                        <Border Padding="10"
+                                Background="#FFFFFF"
+                                BorderBrush="#D5DCE0"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Visibility="{Binding DataContext.ShowBranchPanel, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <DockPanel>
+                                    <Ellipse Width="8"
+                                             Height="8"
+                                             Margin="0,0,18,0"
+                                             Fill="#D92B2B" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="条件数据" />
+                                </DockPanel>
+
+                                <Grid Grid.Row="1"
+                                      Margin="0,10,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="74" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Height="32"
+                                             Text="{Binding ConditionDataName, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Grid.Column="1"
+                                            Margin="8,0,0,0"
+                                            Content="添加数据源" />
+                                </Grid>
+
+                                <ListBox Grid.Row="2"
+                                         MinHeight="280"
+                                         BorderBrush="#D5DCE0"
+                                         BorderThickness="1"
+                                         ItemsSource="{Binding Branches}"
+                                         SelectedItem="{Binding SelectedBranch}">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="{x:Type ListBoxItem}">
+                                            <Setter Property="HorizontalContentAlignment"
+                                                    Value="Stretch" />
+                                            <Setter Property="Padding"
+                                                    Value="0" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:FlowBranch}">
+                                            <Grid Height="48">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Text="{Binding Sequence}" />
+                                                <TextBox Grid.Column="1"
+                                                         Margin="4,8"
+                                                         Text="{Binding ConditionValue, UpdateSourceTrigger=PropertyChanged}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <Grid Grid.Row="3"
+                                      Margin="0,10,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Height="34"
+                                            Command="{Binding DataContext.AddBranchCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                            Content="＋ 添加分支" />
+                                    <Button Grid.Column="2"
+                                            Height="34"
+                                            Command="{Binding DataContext.RemoveBranchCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                            Content="删除分支" />
+                                </Grid>
+
+                                <Grid Grid.Row="4">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="44" />
+                                        <RowDefinition Height="1" />
+                                        <RowDefinition Height="44" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="1" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="强制分支" />
+                                    <CheckBox Grid.Column="2"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding ForceBranch}" />
+                                    <Border Grid.Row="1"
+                                            Grid.ColumnSpan="3"
+                                            Background="#C9CED2" />
+                                    <Border Grid.Column="1"
+                                            Grid.RowSpan="3"
+                                            Background="#C9CED2" />
+                                    <TextBlock Grid.Row="2"
+                                               Grid.ColumnSpan="2"
+                                               VerticalAlignment="Center"
+                                               Text="运行模式时强制功能失效" />
+                                    <CheckBox Grid.Row="2"
+                                              Grid.Column="2"
+                                              HorizontalAlignment="Right"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding ForceInvalidInRun}" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
     <Grid Margin="14">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -31,7 +408,7 @@
                     <TextBlock Margin="0,4,0,0"
                                FontSize="12"
                                Foreground="#687975"
-                               Text="拖拽左侧算子到右侧流程区域，点击启动后按竖向顺序运行。" />
+                               Text="点击连线加号添加算子块，再把左侧算子拖入选中的算子块。" />
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
@@ -57,10 +434,38 @@
                 <ColumnDefinition Width="230" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="360" />
             </Grid.ColumnDefinitions>
 
             <controls:OperatorPaletteControl Grid.Column="0" />
-            <controls:FlowChartControl x:Name="flowChart" Grid.Column="2" />
+            <controls:FlowChartControl x:Name="flowChart"
+                                       Grid.Column="2"
+                                       Nodes="{Binding Nodes}"
+                                       SelectedNode="{Binding SelectedNode, Mode=TwoWay}" />
+
+            <Border Grid.Column="4"
+                    Background="#F8F9FA"
+                    BorderBrush="#D5DCE0"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <ContentControl Content="{Binding SelectedNode}"
+                                ContentTemplate="{StaticResource SelectedBlockTemplate}">
+                    <ContentControl.Style>
+                        <Style TargetType="{x:Type ContentControl}">
+                            <Setter Property="Visibility"
+                                    Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedNode}"
+                                             Value="{x:Null}">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ContentControl.Style>
+                </ContentControl>
+            </Border>
         </Grid>
     </Grid>
 </Window>

@@ -173,9 +173,13 @@
                                 </WrapPanel>
 
                                 <ListBox Grid.Row="2"
+                                         AllowDrop="True"
                                          MinHeight="260"
                                          BorderBrush="#D5DCE0"
                                          BorderThickness="1"
+                                         DragLeave="OperatorList_DragLeave"
+                                         DragOver="OperatorList_DragOver"
+                                         Drop="OperatorList_Drop"
                                          ItemsSource="{Binding Operators}"
                                          SelectedItem="{Binding SelectedOperator}">
                                     <ListBox.ItemContainerStyle>

@@ -124,7 +124,13 @@ namespace MyFlowChart.Models
         public bool IsEnabled
         {
             get { return _isEnabled; }
-            set { Set(ref _isEnabled, value); }
+            set
+            {
+                if (Set(ref _isEnabled, value))
+                {
+                    SyncBranchChildrenEnabled(value);
+                }
+            }
         }
 
         public bool IsSelected
@@ -474,6 +480,38 @@ namespace MyFlowChart.Models
             OnPropertyChanged("OperatorCountText");
             OnPropertyChanged("NodeDisplayWidth");
             OnPropertyChanged("TemplateWidth");
+        }
+
+        /// <summary>
+        /// 同步当前分支块或线程块内部所有流程块的启用状态。
+        /// </summary>
+        /// <param name="isEnabled">需要同步到子流程块的启用状态。</param>
+        /// <returns>无返回值。</returns>
+        private void SyncBranchChildrenEnabled(bool isEnabled)
+        {
+            if (!CanConfigureBranches)
+            {
+                return;
+            }
+
+            foreach (FlowBranch branch in Branches)
+            {
+                foreach (FlowNode node in branch.Nodes)
+                {
+                    node.ApplyParentEnabled(isEnabled);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 应用父分支块传下来的启用状态，并继续同步到更深层子流程块。
+        /// </summary>
+        /// <param name="isEnabled">父分支块传下来的启用状态。</param>
+        /// <returns>无返回值。</returns>
+        private void ApplyParentEnabled(bool isEnabled)
+        {
+            Set(ref _isEnabled, isEnabled);
+            SyncBranchChildrenEnabled(isEnabled);
         }
 
         /// <summary>

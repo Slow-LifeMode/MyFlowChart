@@ -56,7 +56,7 @@ namespace MyFlowChart.Controls
         private const double GotoNodeHeight = 38;
         private const double MainX = 80;
         private const double StartY = 28;
-        private const double VerticalGap = 88;
+        private const double VerticalGap = NormalNodeHeight;
         private const double BranchGapX = 148;
         private const double BranchDropY = VerticalGap;
         private const double ScenePadding = 16;
@@ -898,7 +898,7 @@ namespace MyFlowChart.Controls
             }
 
             double branchNodeStartY = sourceLayout.Bottom + BranchDropY;
-            double deepestBranchBottom = branchNodeStartY;
+            double deepestBranchBottom = sourceLayout.Bottom;
             for (int i = 0; i < node.Branches.Count; i++)
             {
                 FlowBranch branch = node.Branches[i];
@@ -910,7 +910,7 @@ namespace MyFlowChart.Controls
                 deepestBranchBottom = Math.Max(deepestBranchBottom, GetNodeCollectionBottom(branch.Nodes, branchNodeStartY));
             }
 
-            return Math.Max(deepestBranchBottom + BranchMergeGapY, Math.Max(minimumMergeY, sourceLayout.Bottom + 190));
+            return Math.Max(deepestBranchBottom + BranchMergeGapY, minimumMergeY);
         }
 
         /// <summary>
@@ -1781,7 +1781,7 @@ namespace MyFlowChart.Controls
                 return;
             }
 
-            for (double centerY = firstCenterY; centerY < to.Y - 0.1; centerY += VerticalGap)
+            for (double centerY = firstCenterY; centerY <= to.Y - VerticalGap / 2.0 + 0.1; centerY += VerticalGap)
             {
                 RenderConnectorAddButton(canvas, from.X, centerY, target);
             }
@@ -1810,6 +1810,7 @@ namespace MyFlowChart.Controls
         /// <returns>返回按钮元素。</returns>
         private Button CreateAddButton(AddTarget target)
         {
+            ContextMenu contextMenu = (ContextMenu)FindResource("ConnectorMenu");
             Button button = new Button
             {
                 Width = 28,
@@ -1817,12 +1818,13 @@ namespace MyFlowChart.Controls
                 Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(30, 155, 255)),
                 BorderThickness = new Thickness(2),
-                ContextMenu = (ContextMenu)FindResource("ConnectorMenu"),
+                ContextMenu = contextMenu,
                 Tag = target,
                 Cursor = Cursors.Hand,
                 Content = "+",
                 Opacity = 0
             };
+            contextMenu.Closed += AddButtonContextMenu_Closed;
             button.Click += ConnectorAddButton_Click;
             button.MouseEnter += AddButton_MouseEnter;
             button.MouseLeave += AddButton_MouseLeave;
@@ -1854,6 +1856,22 @@ namespace MyFlowChart.Controls
         {
             Button button = sender as Button;
             if (button != null && (button.ContextMenu == null || !button.ContextMenu.IsOpen))
+            {
+                button.Opacity = 0;
+            }
+        }
+
+        /// <summary>
+        /// 连线菜单关闭后隐藏未悬停的加号按钮。
+        /// </summary>
+        /// <param name="sender">连线菜单。</param>
+        /// <param name="e">事件参数。</param>
+        /// <returns>无返回值。</returns>
+        private void AddButtonContextMenu_Closed(object sender, RoutedEventArgs e)
+        {
+            ContextMenu menu = sender as ContextMenu;
+            Button button = menu == null ? null : menu.PlacementTarget as Button;
+            if (button != null && !button.IsMouseOver)
             {
                 button.Opacity = 0;
             }

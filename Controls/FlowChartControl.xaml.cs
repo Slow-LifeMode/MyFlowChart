@@ -58,14 +58,18 @@ namespace MyFlowChart.Controls
         private const double StartY = 28;
         private const double VerticalGap = 88;
         private const double BranchGapX = 148;
-        private const double BranchDropY = 82;
+        private const double BranchDropY = VerticalGap;
         private const double ScenePadding = 16;
-        private const double BranchMergeGapY = 56;
+        private const double BranchMergeGapY = VerticalGap;
         private const double MinSceneWidth = 2600;
         private const double MinSceneHeight = 1800;
         private const double MinZoom = 0.5;
         private const double MaxZoom = 2.5;
         private const double ZoomStep = 0.1;
+        private const double RunningOutlinePadding = 10;
+        private const double RunningOutlineArmLength = 16;
+        private const double RunningOutlineCornerRadius = 8;
+        private const double RunningOutlineStrokeThickness = 4;
 
         private readonly Dictionary<Guid, NodeLayoutInfo> _nodeLayouts = new Dictionary<Guid, NodeLayoutInfo>();
         private readonly HashSet<FlowNode> _observedNodes = new HashSet<FlowNode>();
@@ -870,7 +874,7 @@ namespace MyFlowChart.Controls
                 }
                 else if (nextNode != null)
                 {
-                    double toY = nextY + VerticalGap;
+                    double toY = layout.Bottom + VerticalGap;
                     RenderVerticalConnector(canvas, layout.BottomCenter, new Point(layout.CenterX, toY), isInteractive, new AddTarget(null, i + 1));
                     nextY = toY;
                 }
@@ -887,15 +891,64 @@ namespace MyFlowChart.Controls
         /// <returns>返回合流线的纵坐标。</returns>
         private double GetBranchMergeY(FlowNode node, NodeLayoutInfo sourceLayout)
         {
-            int maxNodeCount = node.Branches.Count == 0 ? 0 : node.Branches.Max(o => o.Nodes.Count);
-            if (maxNodeCount == 0)
+            double minimumMergeY = sourceLayout.Bottom + BranchMergeGapY;
+            if (node.Branches.Count == 0)
             {
-                return sourceLayout.Bottom + BranchDropY + BranchMergeGapY;
+                return minimumMergeY;
             }
 
-            double firstNodeY = sourceLayout.Bottom + BranchDropY;
-            double lastNodeBottom = firstNodeY + (maxNodeCount - 1) * VerticalGap + NormalNodeHeight;
-            return Math.Max(lastNodeBottom + BranchMergeGapY, sourceLayout.Bottom + 190);
+            double branchNodeStartY = sourceLayout.Bottom + BranchDropY;
+            double deepestBranchBottom = branchNodeStartY;
+            for (int i = 0; i < node.Branches.Count; i++)
+            {
+                FlowBranch branch = node.Branches[i];
+                if (branch.Nodes.Count == 0)
+                {
+                    continue;
+                }
+
+                deepestBranchBottom = Math.Max(deepestBranchBottom, GetNodeCollectionBottom(branch.Nodes, branchNodeStartY));
+            }
+
+            return Math.Max(deepestBranchBottom + BranchMergeGapY, Math.Max(minimumMergeY, sourceLayout.Bottom + 190));
+        }
+
+        /// <summary>
+        /// 递归计算一组流程块在指定起始纵坐标下的最底部位置。
+        /// </summary>
+        /// <param name="nodes">流程块集合。</param>
+        /// <param name="startY">首个流程块顶部纵坐标。</param>
+        /// <returns>返回最底部纵坐标。</returns>
+        private double GetNodeCollectionBottom(IList<FlowNode> nodes, double startY)
+        {
+            if (nodes == null || nodes.Count == 0)
+            {
+                return startY;
+            }
+
+            double currentTop = startY;
+            double deepestBottom = startY;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                FlowNode node = nodes[i];
+                double nodeHeight = GetNodeHeight(node);
+                double nodeBottom = currentTop + nodeHeight;
+                deepestBottom = Math.Max(deepestBottom, nodeBottom);
+
+                if (node.CanConfigureBranches)
+                {
+                    NodeLayoutInfo layout = new NodeLayoutInfo(node, 0, currentTop, GetNodeWidth(node), nodeHeight);
+                    double mergeY = GetBranchMergeY(node, layout);
+                    deepestBottom = Math.Max(deepestBottom, mergeY);
+                    currentTop = mergeY + VerticalGap;
+                }
+                else
+                {
+                    currentTop = nodeBottom + VerticalGap;
+                }
+            }
+
+            return deepestBottom;
         }
 
         /// <summary>
@@ -915,7 +968,7 @@ namespace MyFlowChart.Controls
             }
 
             double sourceX = sourceLayout.CenterX;
-            double lastBranchX = sourceX + (node.Branches.Count - 1) * BranchGapX;
+            double lastBranchX = GetLastDirectBranchX(node, sourceX);
 
             if (node.Branches.Count > 1)
             {
@@ -936,7 +989,7 @@ namespace MyFlowChart.Controls
             for (int i = 0; i < node.Branches.Count; i++)
             {
                 FlowBranch branch = node.Branches[i];
-                double branchX = sourceX + i * BranchGapX;
+                double branchX = GetBranchLaneX(node, sourceX, i);
                 double branchNodeY = sourceLayout.Bottom + BranchDropY;
                 NodeLayoutInfo branchStartLayout = i == 0
                     ? sourceLayout
@@ -949,15 +1002,130 @@ namespace MyFlowChart.Controls
                 }
 
                 RenderVerticalConnector(canvas, branchStartLayout.BottomCenter, new Point(branchX, branchNodeY), isInteractive, new AddTarget(branch, 0));
+                RenderBranchNodes(canvas, branch, branchX, branchNodeY, mergeY, isInteractive);
+            }
+        }
 
-                for (int n = 0; n < branch.Nodes.Count; n++)
+        /// <summary>
+        /// 计算指定分支的泳道横坐标。
+        /// </summary>
+        /// <param name="node">分支源流程块。</param>
+        /// <param name="sourceX">分支源块中心横坐标。</param>
+        /// <param name="branchIndex">分支序号。</param>
+        /// <returns>返回分支泳道中心横坐标。</returns>
+        private double GetBranchLaneX(FlowNode node, double sourceX, int branchIndex)
+        {
+            if (branchIndex <= 0)
+            {
+                return sourceX;
+            }
+
+            int laneOffset = 0;
+            for (int i = 0; i < branchIndex; i++)
+            {
+                laneOffset += GetBranchLaneCount(node.Branches[i]);
+            }
+
+            return sourceX + laneOffset * BranchGapX;
+        }
+
+        /// <summary>
+        /// 计算最后一个直接分支的横坐标。
+        /// </summary>
+        /// <param name="node">分支源流程块。</param>
+        /// <param name="sourceX">分支源块中心横坐标。</param>
+        /// <returns>返回最后一个直接分支中心横坐标。</returns>
+        private double GetLastDirectBranchX(FlowNode node, double sourceX)
+        {
+            return node == null || node.Branches.Count == 0
+                ? sourceX
+                : GetBranchLaneX(node, sourceX, node.Branches.Count - 1);
+        }
+
+        /// <summary>
+        /// 计算一个直接分支占用的泳道数量。
+        /// </summary>
+        /// <param name="branch">直接分支。</param>
+        /// <returns>返回分支子树占用的泳道数量。</returns>
+        private int GetBranchLaneCount(FlowBranch branch)
+        {
+            return Math.Max(1, branch == null ? 1 : GetNodeCollectionLaneCount(branch.Nodes));
+        }
+
+        /// <summary>
+        /// 计算一组流程块占用的最大泳道数量。
+        /// </summary>
+        /// <param name="nodes">流程块集合。</param>
+        /// <returns>返回流程块集合占用的最大泳道数量。</returns>
+        private int GetNodeCollectionLaneCount(IList<FlowNode> nodes)
+        {
+            if (nodes == null || nodes.Count == 0)
+            {
+                return 1;
+            }
+
+            int laneCount = 1;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                laneCount = Math.Max(laneCount, GetNodeLaneCount(nodes[i]));
+            }
+
+            return laneCount;
+        }
+
+        /// <summary>
+        /// 计算单个流程块及其分支子树占用的泳道数量。
+        /// </summary>
+        /// <param name="node">流程块。</param>
+        /// <returns>返回流程块占用的泳道数量。</returns>
+        private int GetNodeLaneCount(FlowNode node)
+        {
+            if (node == null || !node.CanConfigureBranches || node.Branches.Count == 0)
+            {
+                return 1;
+            }
+
+            int laneCount = 0;
+            for (int i = 0; i < node.Branches.Count; i++)
+            {
+                laneCount += GetBranchLaneCount(node.Branches[i]);
+            }
+
+            return Math.Max(1, laneCount);
+        }
+
+        /// <summary>
+        /// 递归渲染分支内的流程块，并支持分支中的 Thread 或 Switch 继续展开分支。
+        /// </summary>
+        /// <param name="canvas">目标画布。</param>
+        /// <param name="branch">当前分支。</param>
+        /// <param name="centerX">分支中心横坐标。</param>
+        /// <param name="startY">首个流程块顶部纵坐标。</param>
+        /// <param name="terminalY">当前分支合流纵坐标。</param>
+        /// <param name="isInteractive">是否生成可交互元素。</param>
+        /// <returns>无返回值。</returns>
+        private void RenderBranchNodes(Canvas canvas, FlowBranch branch, double centerX, double startY, double terminalY, bool isInteractive)
+        {
+            double branchNodeY = startY;
+            for (int i = 0; i < branch.Nodes.Count; i++)
+            {
+                FlowNode branchNode = branch.Nodes[i];
+                bool isLast = i == branch.Nodes.Count - 1;
+                NodeLayoutInfo branchLayout = RenderNode(canvas, branchNode, centerX, branchNodeY, isInteractive);
+
+                if (branchNode.CanConfigureBranches)
                 {
-                    FlowNode branchNode = branch.Nodes[n];
-                    NodeLayoutInfo branchLayout = RenderNode(canvas, branchNode, branchX, branchNodeY, isInteractive);
-                    double nextY = n == branch.Nodes.Count - 1 ? mergeY : branchNodeY + VerticalGap;
-                    RenderVerticalConnector(canvas, branchLayout.BottomCenter, new Point(branchX, nextY), isInteractive, new AddTarget(branch, n + 1));
+                    double mergeY = GetBranchMergeY(branchNode, branchLayout);
+                    RenderBranchSplit(canvas, branchNode, branchLayout, mergeY, isInteractive);
+                    double nextY = isLast ? terminalY : mergeY + BranchMergeGapY;
+                    RenderVerticalConnector(canvas, new Point(branchLayout.CenterX, mergeY), new Point(branchLayout.CenterX, nextY), isInteractive, new AddTarget(branch, i + 1));
                     branchNodeY = nextY;
+                    continue;
                 }
+
+                double toY = isLast ? terminalY : branchLayout.Bottom + VerticalGap;
+                RenderVerticalConnector(canvas, branchLayout.BottomCenter, new Point(centerX, toY), isInteractive, new AddTarget(branch, i + 1));
+                branchNodeY = toY;
             }
         }
 
@@ -976,9 +1144,10 @@ namespace MyFlowChart.Controls
             double width = GetNodeWidth(parentNode);
             double height = GetNodeHeight(parentNode);
             double left = centerX - width / 2.0;
+            double visualPadding = GetNodeVisualPadding(parentNode);
             FrameworkElement element = CreateParallelBranchElement(parentNode, branch, width, height, isInteractive);
-            Canvas.SetLeft(element, left);
-            Canvas.SetTop(element, topY);
+            Canvas.SetLeft(element, left - visualPadding);
+            Canvas.SetTop(element, topY - visualPadding);
             canvas.Children.Add(element);
             return new NodeLayoutInfo(parentNode, left, topY, width, height);
         }
@@ -997,9 +1166,10 @@ namespace MyFlowChart.Controls
             double width = GetNodeWidth(node);
             double height = GetNodeHeight(node);
             double left = centerX - width / 2.0;
+            double visualPadding = GetNodeVisualPadding(node);
             FrameworkElement element = CreateNodeElement(node, width, height, isInteractive);
-            Canvas.SetLeft(element, left);
-            Canvas.SetTop(element, topY);
+            Canvas.SetLeft(element, left - visualPadding);
+            Canvas.SetTop(element, topY - visualPadding);
             canvas.Children.Add(element);
 
             NodeLayoutInfo layout = new NodeLayoutInfo(node, left, topY, width, height);
@@ -1021,17 +1191,28 @@ namespace MyFlowChart.Controls
         /// <returns>返回流程块元素。</returns>
         private FrameworkElement CreateNodeElement(FlowNode node, double width, double height, bool isInteractive)
         {
+            double visualPadding = GetNodeVisualPadding(node);
+            bool useInnerSelectionBorder = UsesInnerSelectionBorder(node);
+            bool hideOuterBorder = node.IsThreadBlock;
+            Grid host = CreateNodeHost(width, height, visualPadding);
+
+            if (node.Status == FlowNodeStatus.Running)
+            {
+                host.Children.Add(CreateRunningOutline(width, height));
+            }
+
             Border border = new Border
             {
                 Width = width,
                 Height = height,
                 Opacity = node.IsEnabled ? 1.0 : 0.45,
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(node.IsSelected ? Color.FromRgb(30, 155, 255) : Color.FromRgb(88, 217, 192)),
-                BorderThickness = new Thickness(node.IsSelected ? 2 : 1),
+                Background = hideOuterBorder ? Brushes.Transparent : Brushes.White,
+                BorderBrush = hideOuterBorder ? Brushes.Transparent : new SolidColorBrush(node.IsSelected ? Color.FromRgb(30, 155, 255) : Color.FromRgb(88, 217, 192)),
+                BorderThickness = hideOuterBorder ? new Thickness(0) : new Thickness(useInnerSelectionBorder ? 0 : node.IsSelected ? 2 : 1),
                 CornerRadius = new CornerRadius(node.IsEndBlock ? height / 2.0 : 6),
                 Cursor = Cursors.Hand,
                 Tag = node,
+                Margin = new Thickness(visualPadding),
                 SnapsToDevicePixels = true
             };
 
@@ -1045,13 +1226,11 @@ namespace MyFlowChart.Controls
                 border.Drop += NodeElement_Drop;
             }
 
-            Grid grid = new Grid();
-            border.Child = grid;
-
-            if (node.Status == FlowNodeStatus.Running)
+            Grid grid = new Grid
             {
-                grid.Children.Add(CreateRunningOutline(width, height));
-            }
+                ClipToBounds = false
+            };
+            border.Child = grid;
 
             if (node.IsStartBlock)
             {
@@ -1100,7 +1279,13 @@ namespace MyFlowChart.Controls
                 grid.Children.Add(CreateElapsedText(node));
             }
 
-            return border;
+            if (node.IsSelected && useInnerSelectionBorder)
+            {
+                grid.Children.Add(CreateSelectionOutline(width, height, node));
+            }
+
+            host.Children.Add(border);
+            return host;
         }
 
         /// <summary>
@@ -1114,17 +1299,28 @@ namespace MyFlowChart.Controls
         /// <returns>返回平行流程起始块元素。</returns>
         private FrameworkElement CreateParallelBranchElement(FlowNode node, FlowBranch branch, double width, double height, bool isInteractive)
         {
+            double visualPadding = GetNodeVisualPadding(node);
+            bool useInnerSelectionBorder = UsesInnerSelectionBorder(node);
+            bool hideOuterBorder = node.IsThreadBlock;
+            Grid host = CreateNodeHost(width, height, visualPadding);
+
+            if (node.Status == FlowNodeStatus.Running)
+            {
+                host.Children.Add(CreateRunningOutline(width, height));
+            }
+
             Border border = new Border
             {
                 Width = width,
                 Height = height,
                 Opacity = node.IsEnabled ? 1.0 : 0.45,
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(node.IsSelected ? Color.FromRgb(30, 155, 255) : Color.FromRgb(88, 217, 192)),
-                BorderThickness = new Thickness(node.IsSelected ? 2 : 1),
+                Background = hideOuterBorder ? Brushes.Transparent : Brushes.White,
+                BorderBrush = hideOuterBorder ? Brushes.Transparent : new SolidColorBrush(node.IsSelected ? Color.FromRgb(30, 155, 255) : Color.FromRgb(88, 217, 192)),
+                BorderThickness = hideOuterBorder ? new Thickness(0) : new Thickness(useInnerSelectionBorder ? 0 : node.IsSelected ? 2 : 1),
                 CornerRadius = new CornerRadius(6),
                 Cursor = Cursors.Hand,
                 Tag = node,
+                Margin = new Thickness(visualPadding),
                 SnapsToDevicePixels = true
             };
 
@@ -1135,13 +1331,11 @@ namespace MyFlowChart.Controls
                 border.ContextMenu = CreateNodeContextMenu(node);
             }
 
-            Grid grid = new Grid();
-            border.Child = grid;
-
-            if (node.Status == FlowNodeStatus.Running)
+            Grid grid = new Grid
             {
-                grid.Children.Add(CreateRunningOutline(width, height));
-            }
+                ClipToBounds = false
+            };
+            border.Child = grid;
 
             if (node.IsSwitchBlock)
             {
@@ -1156,7 +1350,14 @@ namespace MyFlowChart.Controls
             grid.Children.Add(CreateLeftBadge(branch.Sequence.ToString()));
             grid.Children.Add(CreateNodeText(GetParallelBranchDisplayName(node, branch)));
             grid.Children.Add(CreateElapsedText(node));
-            return border;
+
+            if (node.IsSelected && useInnerSelectionBorder)
+            {
+                grid.Children.Add(CreateSelectionOutline(width, height, node));
+            }
+
+            host.Children.Add(border);
+            return host;
         }
 
         /// <summary>
@@ -1170,6 +1371,69 @@ namespace MyFlowChart.Controls
             string prefix = node != null && node.IsSwitchBlock ? "Switch" : "Thread";
             int sequence = branch == null ? 1 : branch.Sequence;
             return prefix + sequence;
+        }
+
+        /// <summary>
+        /// 创建流程块视觉宿主，给运行外轮廓预留绘制空间。
+        /// </summary>
+        /// <param name="width">流程块逻辑宽度。</param>
+        /// <param name="height">流程块逻辑高度。</param>
+        /// <param name="visualPadding">外部视觉留白。</param>
+        /// <returns>返回流程块视觉宿主。</returns>
+        private Grid CreateNodeHost(double width, double height, double visualPadding)
+        {
+            return new Grid
+            {
+                Width = width + visualPadding * 2,
+                Height = height + visualPadding * 2,
+                ClipToBounds = false
+            };
+        }
+
+        /// <summary>
+        /// 获取流程块外部视觉留白。
+        /// </summary>
+        /// <param name="node">流程块。</param>
+        /// <returns>运行态返回外轮廓留白，否则返回零。</returns>
+        private double GetNodeVisualPadding(FlowNode node)
+        {
+            return node != null && node.Status == FlowNodeStatus.Running ? RunningOutlinePadding : 0;
+        }
+
+        /// <summary>
+        /// 判断流程块是否使用内部选中轮廓。
+        /// </summary>
+        /// <param name="node">流程块。</param>
+        /// <returns>普通算子块和线程块返回 true，否则返回 false。</returns>
+        private bool UsesInnerSelectionBorder(FlowNode node)
+        {
+            return node != null && (node.IsOperatorBlock || node.IsThreadBlock);
+        }
+
+        /// <summary>
+        /// 创建流程块选中轮廓。
+        /// </summary>
+        /// <param name="width">流程块宽度。</param>
+        /// <param name="height">流程块高度。</param>
+        /// <param name="node">流程块。</param>
+        /// <returns>返回选中轮廓元素。</returns>
+        private UIElement CreateSelectionOutline(double width, double height, FlowNode node)
+        {
+            if (node != null && node.IsThreadBlock)
+            {
+                return CreateThreadShape(width, height, new SolidColorBrush(Color.FromRgb(30, 155, 255)), 2, Brushes.Transparent);
+            }
+
+            return new Border
+            {
+                Width = width,
+                Height = height,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(30, 155, 255)),
+                BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(node != null && node.IsEndBlock ? height / 2.0 : 6),
+                IsHitTestVisible = false,
+                SnapsToDevicePixels = true
+            };
         }
 
         /// <summary>
@@ -1258,12 +1522,26 @@ namespace MyFlowChart.Controls
         /// <returns>返回线程块形状。</returns>
         private UIElement CreateThreadShape(double width, double height)
         {
+            return CreateThreadShape(width, height, new SolidColorBrush(Color.FromRgb(88, 217, 192)), 1, Brushes.White);
+        }
+
+        /// <summary>
+        /// 创建线程块形状。
+        /// </summary>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="stroke">描边画刷。</param>
+        /// <param name="strokeThickness">描边宽度。</param>
+        /// <param name="fill">填充画刷。</param>
+        /// <returns>返回线程块形状。</returns>
+        private UIElement CreateThreadShape(double width, double height, Brush stroke, double strokeThickness, Brush fill)
+        {
             return new Path
             {
                 Data = Geometry.Parse(string.Format("M 0 0 L {0} 0 L {0} {1} L {2} {3} L 0 {1} Z", width, height - 9, width * 0.72, height)),
-                Fill = Brushes.White,
-                Stroke = new SolidColorBrush(Color.FromRgb(88, 217, 192)),
-                StrokeThickness = 1,
+                Fill = fill,
+                Stroke = stroke,
+                StrokeThickness = strokeThickness,
                 Stretch = Stretch.Fill
             };
         }
@@ -1335,20 +1613,17 @@ namespace MyFlowChart.Controls
         {
             Grid grid = new Grid
             {
-                Width = width + 18,
-                Height = height + 18,
-                Margin = new Thickness(-9),
-                IsHitTestVisible = false
+                Width = width + RunningOutlinePadding * 2,
+                Height = height + RunningOutlinePadding * 2,
+                IsHitTestVisible = false,
+                ClipToBounds = false
             };
 
             Brush brush = new SolidColorBrush(Color.FromRgb(82, 214, 156));
-            double corner = 8;
-            double arm = 16;
-
-            grid.Children.Add(CreateCornerSegment(0, 0, arm, true, true, brush, corner));
-            grid.Children.Add(CreateCornerSegment(1, 0, arm, false, true, brush, corner));
-            grid.Children.Add(CreateCornerSegment(0, 1, arm, true, false, brush, corner));
-            grid.Children.Add(CreateCornerSegment(1, 1, arm, false, false, brush, corner));
+            grid.Children.Add(CreateCornerSegment(0, 0, RunningOutlineArmLength, true, true, brush, RunningOutlineCornerRadius));
+            grid.Children.Add(CreateCornerSegment(1, 0, RunningOutlineArmLength, false, true, brush, RunningOutlineCornerRadius));
+            grid.Children.Add(CreateCornerSegment(0, 1, RunningOutlineArmLength, true, false, brush, RunningOutlineCornerRadius));
+            grid.Children.Add(CreateCornerSegment(1, 1, RunningOutlineArmLength, false, false, brush, RunningOutlineCornerRadius));
             return grid;
         }
 
@@ -1365,21 +1640,23 @@ namespace MyFlowChart.Controls
         /// <returns>返回角标元素。</returns>
         private UIElement CreateCornerSegment(int column, int row, double length, bool isLeft, bool isTop, Brush brush, double cornerRadius)
         {
+            double halfThickness = RunningOutlineStrokeThickness / 2.0;
             Grid container = new Grid
             {
                 HorizontalAlignment = isLeft ? HorizontalAlignment.Left : HorizontalAlignment.Right,
                 VerticalAlignment = isTop ? VerticalAlignment.Top : VerticalAlignment.Bottom,
-                Width = length,
-                Height = length
+                Width = length + RunningOutlineStrokeThickness,
+                Height = length + RunningOutlineStrokeThickness,
+                ClipToBounds = false
             };
 
             Path path = new Path
             {
                 Stroke = brush,
-                StrokeThickness = 4,
+                StrokeThickness = RunningOutlineStrokeThickness,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round,
-                Data = Geometry.Parse(GetCornerGeometry(length, isLeft, isTop, cornerRadius))
+                Data = Geometry.Parse(GetCornerGeometry(length, isLeft, isTop, cornerRadius, halfThickness))
             };
             container.Children.Add(path);
             return container;
@@ -1393,14 +1670,16 @@ namespace MyFlowChart.Controls
         /// <param name="isTop">是否位于上侧。</param>
         /// <param name="cornerRadius">角标圆角半径。</param>
         /// <returns>返回路径字符串。</returns>
-        private string GetCornerGeometry(double length, bool isLeft, bool isTop, double cornerRadius)
+        private string GetCornerGeometry(double length, bool isLeft, bool isTop, double cornerRadius, double offset)
         {
-            double startX = isLeft ? length : 0;
-            double endX = isLeft ? cornerRadius : length - cornerRadius;
-            double verticalX = isLeft ? 0 : length;
-            double startY = isTop ? 0 : length;
-            double verticalEndY = isTop ? length : 0;
-            double arcY = isTop ? cornerRadius : length - cornerRadius;
+            double min = offset;
+            double max = length + offset;
+            double startX = isLeft ? max : min;
+            double endX = isLeft ? min + cornerRadius : max - cornerRadius;
+            double verticalX = isLeft ? min : max;
+            double startY = isTop ? min : max;
+            double verticalEndY = isTop ? max : min;
+            double arcY = isTop ? min + cornerRadius : max - cornerRadius;
             return string.Format(
                 "M {0} {1} L {2} {1} Q {3} {1} {3} {4} L {3} {5}",
                 startX,
@@ -1479,13 +1758,49 @@ namespace MyFlowChart.Controls
             RenderPolyline(canvas, new[] { from, to }, false, false);
             RenderArrow(canvas, to.X, to.Y - 4, 90);
 
-            if (isInteractive && to.Y - from.Y > 34)
+            if (isInteractive)
             {
-                Button button = CreateAddButton(target);
-                Canvas.SetLeft(button, from.X - 14);
-                Canvas.SetTop(button, (from.Y + to.Y) / 2.0 - 14);
-                canvas.Children.Add(button);
+                RenderConnectorAddButtons(canvas, from, to, target);
             }
+        }
+
+        /// <summary>
+        /// 沿竖向连线按流程块间距渲染一个或多个添加按钮。
+        /// </summary>
+        /// <param name="canvas">目标画布。</param>
+        /// <param name="from">连线起点。</param>
+        /// <param name="to">连线终点。</param>
+        /// <param name="target">添加目标。</param>
+        /// <returns>无返回值。</returns>
+        private void RenderConnectorAddButtons(Canvas canvas, Point from, Point to, AddTarget target)
+        {
+            double length = to.Y - from.Y;
+            double firstCenterY = from.Y + VerticalGap / 2.0;
+            if (length <= 34 || firstCenterY >= to.Y)
+            {
+                return;
+            }
+
+            for (double centerY = firstCenterY; centerY < to.Y - 0.1; centerY += VerticalGap)
+            {
+                RenderConnectorAddButton(canvas, from.X, centerY, target);
+            }
+        }
+
+        /// <summary>
+        /// 在指定中心点渲染一个连线添加按钮。
+        /// </summary>
+        /// <param name="canvas">目标画布。</param>
+        /// <param name="centerX">按钮中心横坐标。</param>
+        /// <param name="centerY">按钮中心纵坐标。</param>
+        /// <param name="target">添加目标。</param>
+        /// <returns>无返回值。</returns>
+        private void RenderConnectorAddButton(Canvas canvas, double centerX, double centerY, AddTarget target)
+        {
+            Button button = CreateAddButton(target);
+            Canvas.SetLeft(button, centerX - 14);
+            Canvas.SetTop(button, centerY - 14);
+            canvas.Children.Add(button);
         }
 
         /// <summary>

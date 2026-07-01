@@ -47,6 +47,13 @@ namespace MyFlowChart.Controls
                 typeof(FlowChartControl),
                 new PropertyMetadata(false));
 
+        public static readonly DependencyProperty CanEditProperty =
+            DependencyProperty.Register(
+                nameof(CanEdit),
+                typeof(bool),
+                typeof(FlowChartControl),
+                new PropertyMetadata(true));
+
         private const double NormalNodeWidth = 104;
         private const double NormalNodeHeight = 42;
         private const double StartNodeWidth = 76;
@@ -70,7 +77,6 @@ namespace MyFlowChart.Controls
         private const double RunningOutlineArmLength = 16;
         private const double RunningOutlineCornerRadius = 8;
         private const double RunningOutlineStrokeThickness = 4;
-
         private readonly Dictionary<Guid, NodeLayoutInfo> _nodeLayouts = new Dictionary<Guid, NodeLayoutInfo>();
         private readonly HashSet<FlowNode> _observedNodes = new HashSet<FlowNode>();
         private readonly HashSet<FlowBranch> _observedBranches = new HashSet<FlowBranch>();
@@ -123,6 +129,12 @@ namespace MyFlowChart.Controls
         {
             get { return (bool)GetValue(IsRunningProperty); }
             private set { SetValue(IsRunningProperty, value); }
+        }
+
+        public bool CanEdit
+        {
+            get { return (bool)GetValue(CanEditProperty); }
+            set { SetValue(CanEditProperty, value); }
         }
 
         public double Zoom
@@ -438,7 +450,7 @@ namespace MyFlowChart.Controls
         private void ConnectorAddButton_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
-            if (button == null || button.ContextMenu == null)
+            if (!CanEdit || button == null || button.ContextMenu == null)
             {
                 return;
             }
@@ -456,6 +468,11 @@ namespace MyFlowChart.Controls
         /// <returns>无返回值。</returns>
         private void AddBlockMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            if (!CanEdit)
+            {
+                return;
+            }
+
             MenuItem menuItem = sender as MenuItem;
             ContextMenu menu = menuItem == null ? null : menuItem.Parent as ContextMenu;
             Button button = menu == null ? null : menu.PlacementTarget as Button;
@@ -474,6 +491,11 @@ namespace MyFlowChart.Controls
         /// <returns>无返回值。</returns>
         private void PasteBlockMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            if (!CanEdit)
+            {
+                return;
+            }
+
             MenuItem menuItem = sender as MenuItem;
             ContextMenu menu = menuItem == null ? null : menuItem.Parent as ContextMenu;
             Button button = menu == null ? null : menu.PlacementTarget as Button;
@@ -498,7 +520,7 @@ namespace MyFlowChart.Controls
         /// <returns>可添加时返回 true，否则返回 false。</returns>
         private bool CanDropOperatorToBlock(FlowNode targetNode, DragEventArgs e)
         {
-            return !IsRunning && targetNode != null && targetNode.CanConfigureOperators && GetDragOperatorData(e) != null;
+            return CanEdit && !IsRunning && targetNode != null && targetNode.CanConfigureOperators && GetDragOperatorData(e) != null;
         }
 
         /// <summary>
@@ -535,7 +557,7 @@ namespace MyFlowChart.Controls
         /// <returns>无返回值。</returns>
         private void AddBlock(AddTarget target, FlowBlockKind kind)
         {
-            if (target == null)
+            if (!CanEdit || target == null)
             {
                 return;
             }
@@ -554,7 +576,7 @@ namespace MyFlowChart.Controls
         /// <returns>无返回值。</returns>
         private void InsertNode(AddTarget target, FlowNode node)
         {
-            if (target == null || node == null)
+            if (!CanEdit || target == null || node == null)
             {
                 return;
             }
@@ -625,7 +647,7 @@ namespace MyFlowChart.Controls
         /// <returns>无返回值。</returns>
         private void AddOperatorToBlock(FlowNode targetNode, string operatorName)
         {
-            if (targetNode == null || !targetNode.CanConfigureOperators || string.IsNullOrWhiteSpace(operatorName))
+            if (!CanEdit || targetNode == null || !targetNode.CanConfigureOperators || string.IsNullOrWhiteSpace(operatorName))
             {
                 return;
             }
@@ -1194,12 +1216,9 @@ namespace MyFlowChart.Controls
             double visualPadding = GetNodeVisualPadding(node);
             bool useInnerSelectionBorder = UsesInnerSelectionBorder(node);
             bool hideOuterBorder = node.IsThreadBlock;
+            Brush accentBrush = GetNodeStatusAccentBrush(node);
+            Brush borderBrush = GetNodeStatusBorderBrush(node);
             Grid host = CreateNodeHost(width, height, visualPadding);
-
-            if (node.Status == FlowNodeStatus.Running)
-            {
-                host.Children.Add(CreateRunningOutline(width, height));
-            }
 
             Border border = new Border
             {
@@ -1207,7 +1226,7 @@ namespace MyFlowChart.Controls
                 Height = height,
                 Opacity = node.IsEnabled ? 1.0 : 0.45,
                 Background = hideOuterBorder ? Brushes.Transparent : Brushes.White,
-                BorderBrush = hideOuterBorder ? Brushes.Transparent : new SolidColorBrush(node.IsSelected ? Color.FromRgb(30, 155, 255) : Color.FromRgb(88, 217, 192)),
+                BorderBrush = hideOuterBorder ? Brushes.Transparent : node.IsSelected ? new SolidColorBrush(Color.FromRgb(30, 155, 255)) : borderBrush,
                 BorderThickness = hideOuterBorder ? new Thickness(0) : new Thickness(useInnerSelectionBorder ? 0 : node.IsSelected ? 2 : 1),
                 CornerRadius = new CornerRadius(node.IsEndBlock ? height / 2.0 : 6),
                 Cursor = Cursors.Hand,
@@ -1234,7 +1253,7 @@ namespace MyFlowChart.Controls
 
             if (node.IsStartBlock)
             {
-                grid.Children.Add(CreateStartIcon());
+                grid.Children.Add(CreateStartIcon(accentBrush));
             }
             else if (node.IsEndBlock)
             {
@@ -1251,21 +1270,21 @@ namespace MyFlowChart.Controls
             }
             else if (node.IsGotoBlock)
             {
-                grid.Children.Add(CreateFlagShape(width, height, true));
+                grid.Children.Add(CreateFlagShape(width, height, true, accentBrush));
                 grid.Children.Add(CreateLeftBadge("▶"));
                 grid.Children.Add(CreateNodeText(node.DisplayName));
                 grid.Children.Add(CreateElapsedText(node));
             }
             else if (node.IsSwitchBlock)
             {
-                grid.Children.Add(CreateSwitchBracket(width, height));
+                grid.Children.Add(CreateSwitchBracket(width, height, accentBrush));
                 grid.Children.Add(CreateNodeText(node.DisplayName));
                 grid.Children.Add(CreateLeftBadge("1"));
                 grid.Children.Add(CreateElapsedText(node));
             }
             else if (node.IsThreadBlock)
             {
-                grid.Children.Add(CreateThreadShape(width, height));
+                grid.Children.Add(CreateThreadShape(width, height, accentBrush));
                 grid.Children.Add(CreateLeftBadge("1"));
                 grid.Children.Add(CreateNodeText(node.DisplayName));
                 grid.Children.Add(CreateMinusCircle());
@@ -1273,7 +1292,7 @@ namespace MyFlowChart.Controls
             }
             else
             {
-                grid.Children.Add(CreateOperatorBlockShape(width, height));
+                grid.Children.Add(CreateOperatorBlockShape(width, height, accentBrush));
                 grid.Children.Add(CreateLeftBadge("▶"));
                 grid.Children.Add(CreateNodeText(node.DisplayName));
                 grid.Children.Add(CreateElapsedText(node));
@@ -1302,12 +1321,9 @@ namespace MyFlowChart.Controls
             double visualPadding = GetNodeVisualPadding(node);
             bool useInnerSelectionBorder = UsesInnerSelectionBorder(node);
             bool hideOuterBorder = node.IsThreadBlock;
+            Brush accentBrush = GetNodeStatusAccentBrush(node);
+            Brush borderBrush = GetNodeStatusBorderBrush(node);
             Grid host = CreateNodeHost(width, height, visualPadding);
-
-            if (node.Status == FlowNodeStatus.Running)
-            {
-                host.Children.Add(CreateRunningOutline(width, height));
-            }
 
             Border border = new Border
             {
@@ -1315,7 +1331,7 @@ namespace MyFlowChart.Controls
                 Height = height,
                 Opacity = node.IsEnabled ? 1.0 : 0.45,
                 Background = hideOuterBorder ? Brushes.Transparent : Brushes.White,
-                BorderBrush = hideOuterBorder ? Brushes.Transparent : new SolidColorBrush(node.IsSelected ? Color.FromRgb(30, 155, 255) : Color.FromRgb(88, 217, 192)),
+                BorderBrush = hideOuterBorder ? Brushes.Transparent : node.IsSelected ? new SolidColorBrush(Color.FromRgb(30, 155, 255)) : borderBrush,
                 BorderThickness = hideOuterBorder ? new Thickness(0) : new Thickness(useInnerSelectionBorder ? 0 : node.IsSelected ? 2 : 1),
                 CornerRadius = new CornerRadius(6),
                 Cursor = Cursors.Hand,
@@ -1339,11 +1355,11 @@ namespace MyFlowChart.Controls
 
             if (node.IsSwitchBlock)
             {
-                grid.Children.Add(CreateSwitchBracket(width, height));
+                grid.Children.Add(CreateSwitchBracket(width, height, accentBrush));
             }
             else
             {
-                grid.Children.Add(CreateThreadShape(width, height));
+                grid.Children.Add(CreateThreadShape(width, height, accentBrush));
                 grid.Children.Add(CreateMinusCircle());
             }
 
@@ -1391,13 +1407,46 @@ namespace MyFlowChart.Controls
         }
 
         /// <summary>
+        /// 获取流程块状态强调色。
+        /// </summary>
+        /// <param name="node">流程块。</param>
+        /// <returns>返回状态强调色画刷。</returns>
+        private static Brush GetNodeStatusAccentBrush(FlowNode node)
+        {
+            if (node == null)
+            {
+                return new SolidColorBrush(Color.FromRgb(185, 197, 194));
+            }
+
+            switch (node.Status)
+            {
+                case FlowNodeStatus.OK:
+                    return new SolidColorBrush(Color.FromRgb(56, 217, 154));
+                case FlowNodeStatus.NG:
+                    return new SolidColorBrush(Color.FromRgb(230, 87, 87));
+                default:
+                    return new SolidColorBrush(Color.FromRgb(185, 197, 194));
+            }
+        }
+
+        /// <summary>
+        /// 获取流程块状态边框色。
+        /// </summary>
+        /// <param name="node">流程块。</param>
+        /// <returns>返回状态边框画刷。</returns>
+        private static Brush GetNodeStatusBorderBrush(FlowNode node)
+        {
+            return GetNodeStatusAccentBrush(node);
+        }
+
+        /// <summary>
         /// 获取流程块外部视觉留白。
         /// </summary>
         /// <param name="node">流程块。</param>
         /// <returns>运行态返回外轮廓留白，否则返回零。</returns>
         private double GetNodeVisualPadding(FlowNode node)
         {
-            return node != null && node.Status == FlowNodeStatus.Running ? RunningOutlinePadding : 0;
+            return 0;
         }
 
         /// <summary>
@@ -1440,14 +1489,14 @@ namespace MyFlowChart.Controls
         /// 创建开始块图标。
         /// </summary>
         /// <returns>返回图标元素。</returns>
-        private UIElement CreateStartIcon()
+        private UIElement CreateStartIcon(Brush accentBrush)
         {
             return new Path
             {
                 Width = 24,
                 Height = 26,
                 Data = Geometry.Parse("M 0 0 L 24 13 L 0 26 Z"),
-                Fill = new SolidColorBrush(Color.FromRgb(82, 214, 156)),
+                Fill = accentBrush,
                 Stretch = Stretch.Fill,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
@@ -1460,14 +1509,14 @@ namespace MyFlowChart.Controls
         /// <param name="width">宽度。</param>
         /// <param name="height">高度。</param>
         /// <returns>返回形状元素。</returns>
-        private UIElement CreateOperatorBlockShape(double width, double height)
+        private UIElement CreateOperatorBlockShape(double width, double height, Brush accentBrush)
         {
             Grid grid = new Grid();
             grid.Children.Add(new Border
             {
                 Width = width,
                 Height = height,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(88, 217, 192)),
+                BorderBrush = accentBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
                 Background = Brushes.White
@@ -1478,7 +1527,7 @@ namespace MyFlowChart.Controls
                 Width = 20,
                 Height = height,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background = new SolidColorBrush(Color.FromRgb(82, 214, 156)),
+                Background = accentBrush,
                 CornerRadius = new CornerRadius(6, 0, 0, 6)
             });
 
@@ -1492,14 +1541,14 @@ namespace MyFlowChart.Controls
         /// <param name="height">高度。</param>
         /// <param name="isGoto">是否为 Goto 块。</param>
         /// <returns>返回旗形块元素。</returns>
-        private UIElement CreateFlagShape(double width, double height, bool isGoto)
+        private UIElement CreateFlagShape(double width, double height, bool isGoto, Brush accentBrush)
         {
             Grid grid = new Grid();
             Path path = new Path
             {
                 Data = Geometry.Parse(string.Format("M 0 0 L {0} 0 L {1} {2} L {0} {3} L 0 {3} Z", width - 10, width - 18, height / 2.0, height)),
                 Fill = Brushes.White,
-                Stroke = new SolidColorBrush(Color.FromRgb(88, 217, 192)),
+                Stroke = accentBrush,
                 StrokeThickness = 1,
                 Stretch = Stretch.Fill
             };
@@ -1508,7 +1557,7 @@ namespace MyFlowChart.Controls
             grid.Children.Add(new Polygon
             {
                 Points = new PointCollection(new[] { new Point(0, height / 2.0), new Point(22, 0), new Point(22, height) }),
-                Fill = new SolidColorBrush(Color.FromRgb(82, 214, 156))
+                Fill = accentBrush
             });
 
             return grid;
@@ -1523,6 +1572,11 @@ namespace MyFlowChart.Controls
         private UIElement CreateThreadShape(double width, double height)
         {
             return CreateThreadShape(width, height, new SolidColorBrush(Color.FromRgb(88, 217, 192)), 1, Brushes.White);
+        }
+
+        private UIElement CreateThreadShape(double width, double height, Brush accentBrush)
+        {
+            return CreateThreadShape(width, height, accentBrush, 1, Brushes.White);
         }
 
         /// <summary>
@@ -1552,14 +1606,14 @@ namespace MyFlowChart.Controls
         /// <param name="width">宽度。</param>
         /// <param name="height">高度。</param>
         /// <returns>返回括号形状。</returns>
-        private UIElement CreateSwitchBracket(double width, double height)
+        private UIElement CreateSwitchBracket(double width, double height, Brush accentBrush)
         {
             Grid grid = new Grid();
             grid.Children.Add(new Border
             {
                 Width = width,
                 Height = height,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(88, 217, 192)),
+                BorderBrush = accentBrush,
                 BorderThickness = new Thickness(0, 2, 0, 2),
                 Background = Brushes.White
             });
@@ -2040,12 +2094,12 @@ namespace MyFlowChart.Controls
         private ContextMenu CreateNodeContextMenu(FlowNode node)
         {
             ContextMenu menu = new ContextMenu();
-            menu.Items.Add(CreateNodeMenuItem("运行块", node, RunNodeMenuItem_Click, !node.IsFixed));
-            menu.Items.Add(CreateNodeMenuItem(node.IsEnabled ? "禁用块" : "启用块", node, ToggleNodeEnabledMenuItem_Click, !node.IsFixed));
+            menu.Items.Add(CreateNodeMenuItem("运行块", node, RunNodeMenuItem_Click, CanEdit && !node.IsFixed));
+            menu.Items.Add(CreateNodeMenuItem(node.IsEnabled ? "禁用块" : "启用块", node, ToggleNodeEnabledMenuItem_Click, CanEdit && !node.IsFixed));
             menu.Items.Add(new Separator());
-            menu.Items.Add(CreateNodeMenuItem("复制块", node, CopyNodeMenuItem_Click, !node.IsFixed));
-            menu.Items.Add(CreateNodeMenuItem("剪切块", node, CutNodeMenuItem_Click, !node.IsFixed));
-            menu.Items.Add(CreateNodeMenuItem("删除块", node, DeleteNodeMenuItem_Click, !node.IsFixed));
+            menu.Items.Add(CreateNodeMenuItem("复制块", node, CopyNodeMenuItem_Click, CanEdit && !node.IsFixed));
+            menu.Items.Add(CreateNodeMenuItem("剪切块", node, CutNodeMenuItem_Click, CanEdit && !node.IsFixed));
+            menu.Items.Add(CreateNodeMenuItem("删除块", node, DeleteNodeMenuItem_Click, CanEdit && !node.IsFixed));
             return menu;
         }
 
@@ -2105,7 +2159,7 @@ namespace MyFlowChart.Controls
         private void ToggleNodeEnabledMenuItem_Click(object sender, RoutedEventArgs e)
         {
             FlowNode node = GetNodeFromMenuItem(sender);
-            if (node == null || node.IsFixed)
+            if (!CanEdit || node == null || node.IsFixed)
             {
                 return;
             }
@@ -2138,7 +2192,7 @@ namespace MyFlowChart.Controls
         private void CutNodeMenuItem_Click(object sender, RoutedEventArgs e)
         {
             FlowNode node = GetNodeFromMenuItem(sender);
-            if (node == null || node.IsFixed)
+            if (!CanEdit || node == null || node.IsFixed)
             {
                 return;
             }
@@ -2156,7 +2210,7 @@ namespace MyFlowChart.Controls
         private void DeleteNodeMenuItem_Click(object sender, RoutedEventArgs e)
         {
             FlowNode node = GetNodeFromMenuItem(sender);
-            if (node != null && !node.IsFixed)
+            if (CanEdit && node != null && !node.IsFixed)
             {
                 RemoveNode(node);
             }
@@ -2169,7 +2223,7 @@ namespace MyFlowChart.Controls
         /// <returns>删除成功返回 true，否则返回 false。</returns>
         private bool RemoveNode(FlowNode node)
         {
-            if (node == null || node.IsFixed)
+            if (!CanEdit || node == null || node.IsFixed)
             {
                 return false;
             }
@@ -2249,6 +2303,7 @@ namespace MyFlowChart.Controls
                 {
                     OperatorName = flowOperator.OperatorName,
                     DisplayName = flowOperator.DisplayName,
+                    Parameters = flowOperator.CloneParameters(),
                     Status = FlowNodeStatus.NotRun
                 });
             }

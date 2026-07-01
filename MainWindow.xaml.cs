@@ -3,8 +3,13 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
 using MyFlowChart.Models;
+using MyFlowChart.Services.Vision;
+using MyFlowChart.ViewModels;
+using MyFlowChart.Views;
+using OpenCvWindowTool;
 
 namespace MyFlowChart
 {
@@ -12,6 +17,8 @@ namespace MyFlowChart
     {
         private OperatorInsertAdorner _operatorInsertAdorner;
         private AdornerLayer _operatorInsertAdornerLayer;
+        private readonly OpenCvImageViewer _imageViewer;
+        private readonly VisionWorkflowRunner _visionRunner;
 
         /// <summary>
         /// 初始化主窗口并加载流程图界面。
@@ -20,6 +27,29 @@ namespace MyFlowChart
         public MainWindow()
         {
             InitializeComponent();
+            _imageViewer = new OpenCvImageViewer
+            {
+                DisplayToolBar = true,
+                DisplayStatusBar = true,
+                EnableRoiInteraction = true
+            };
+            ImageViewerHost.Child = _imageViewer;
+            _visionRunner = new VisionWorkflowRunner(new OperatorCatalog());
+            _imageViewer.SelectedRoiChanged += ImageViewer_RoiChanged;
+            _imageViewer.RoiChanged += ImageViewer_RoiChanged;
+            _imageViewer.RoiEditCompleted += ImageViewer_RoiChanged;
+            UpdateVisionRoiSummary();
+        }
+
+        /// <summary>
+        /// 打开图像文件并加载到视觉显示控件。
+        /// </summary>
+        /// <param name="sender">触发打开图像的按钮。</param>
+        /// <param name="e">按钮点击事件参数。</param>
+        /// <returns>无返回值。</returns>
+        private void btnOpenImage_Click(object sender, RoutedEventArgs e)
+        {
+            OpenImageForVision();
         }
 
         /// <summary>
@@ -30,18 +60,7 @@ namespace MyFlowChart
         /// <returns>无返回值。</returns>
         private async void btnStart_Click(object sender, RoutedEventArgs e)
         {
-            if (flowChart.Nodes == null || flowChart.Nodes.Count == 0)
-            {
-                return;
-            }
-
-            btnStart.IsEnabled = false;
-            btnStop.IsEnabled = true;
-
-            await flowChart.RunAsync();
-
-            btnStart.IsEnabled = true;
-            btnStop.IsEnabled = false;
+            await RunVisionGraphAsync();
         }
 
         /// <summary>
@@ -53,7 +72,293 @@ namespace MyFlowChart
         private void btnStop_Click(object sender, RoutedEventArgs e)
         {
             flowChart.Stop();
-            btnStop.IsEnabled = false;
+            _visionRunner.Stop();
+            GetViewModel()?.StopVisionRun();
+        }
+
+        /// <summary>
+        /// 打开图像文件并加载到视觉显示控件。
+        /// </summary>
+        /// <returns>无返回值。</returns>
+        private void OpenImageForVision()
+        {
+            Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "图像文件|*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff|所有文件|*.*"
+            };
+
+            if (dialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            _imageViewer.LoadImage(dialog.FileName);
+            GetViewModel()?.UpdateVisionResult("结果：已加载图像，等待运行");
+            UpdateVisionRoiSummary();
+        }
+
+        /// <summary>
+        /// 在后台运行当前视觉流程图。
+        /// </summary>
+        /// <returns>异步运行任务。</returns>
+        private async System.Threading.Tasks.Task RunVisionGraphAsync()
+        {
+            MainWindowViewModel viewModel = GetViewModel();
+            if (viewModel == null || !viewModel.CanRunVision)
+            {
+                return;
+            }
+
+            FlowNode selectedNode = ResolveVisionRunNode(viewModel);
+            if (selectedNode == null)
+            {
+                return;
+            }
+
+            RoiItem roi = ResolveLineDetectionRoi();
+            viewModel.BeginVisionRun("视觉流程运行中");
+            viewModel.RefreshVisionRunLogs(selectedNode);
+
+            try
+            {
+                VisionOperatorResult result = await _visionRunner.RunGraphAsync(viewModel.Nodes, _imageViewer.ImageMat, roi);
+                viewModel.EndVisionRun(result.Success, result.Message);
+                ApplyVisionOperatorResults(viewModel.Nodes, _visionRunner.OperatorResults);
+                viewModel.RefreshVisionRunLogs(selectedNode);
+                LineDetectionResult lineResult = result.Payload as LineDetectionResult;
+                if (lineResult == null && _visionRunner.LastOperatorResult != null)
+                {
+                    lineResult = _visionRunner.LastOperatorResult.Payload as LineDetectionResult;
+                }
+
+                if (lineResult != null)
+                {
+                    _imageViewer.ShowLineDetectionResult(lineResult, ResolveLineDetectionParams(selectedNode));
+                    viewModel.UpdateVisionResult(FormatLineDetectionResult(lineResult));
+                }
+                else
+                {
+                    viewModel.UpdateVisionResult("结果：" + result.Message);
+                }
+            }
+            finally
+            {
+                if (viewModel.IsVisionRunning)
+                {
+                    viewModel.EndVisionRun(false, "视觉流程已结束");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 处理图像控件 ROI 变化并刷新右侧结果面板。
+        /// </summary>
+        /// <param name="sender">触发事件的图像控件。</param>
+        /// <param name="e">事件参数。</param>
+        /// <returns>无返回值。</returns>
+        private void ImageViewer_RoiChanged(object sender, EventArgs e)
+        {
+            UpdateVisionRoiSummary();
+        }
+
+        /// <summary>
+        /// 获取主窗口视图模型。
+        /// </summary>
+        /// <returns>主窗口视图模型；未绑定时返回 null。</returns>
+        private MainWindowViewModel GetViewModel()
+        {
+            return DataContext as MainWindowViewModel;
+        }
+
+        /// <summary>
+        /// 获取本次启动需要运行的视觉算子块。
+        /// </summary>
+        /// <param name="viewModel">主窗口视图模型。</param>
+        /// <returns>返回可运行的视觉算子块。</returns>
+        private static FlowNode ResolveVisionRunNode(MainWindowViewModel viewModel)
+        {
+            FlowNode selectedNode = viewModel == null ? null : viewModel.SelectedNode;
+            if (selectedNode != null
+                && selectedNode.CanConfigureOperators
+                && selectedNode.Operators.Any(o => OperatorDefinition.IsLineFindOperator(o.OperatorName)))
+            {
+                return selectedNode;
+            }
+
+            return viewModel == null ? null : viewModel.EnsureDefaultVisionWorkflow();
+        }
+
+        /// <summary>
+        /// 获取当前可用于直线检测的 ROI。
+        /// </summary>
+        /// <returns>可检测直线的 ROI；未找到时返回 null。</returns>
+        private RoiItem ResolveLineDetectionRoi()
+        {
+            RoiItem selectedRoi = _imageViewer.SelectedRoi;
+            if (selectedRoi != null && selectedRoi.CanDetectLine())
+            {
+                return selectedRoi;
+            }
+
+            return _imageViewer.Rois.FirstOrDefault(x => x.CanDetectLine());
+        }
+
+        /// <summary>
+        /// 刷新当前 ROI 摘要。
+        /// </summary>
+        /// <returns>无返回值。</returns>
+        private void UpdateVisionRoiSummary()
+        {
+            RoiItem roi = ResolveLineDetectionRoi();
+            if (roi == null)
+            {
+                GetViewModel()?.UpdateVisionRoi("ROI：未选择可检测直线的矩形 ROI");
+                return;
+            }
+
+            GetViewModel()?.UpdateVisionRoi(string.Format(
+                "ROI：{0}  X={1:0.0}, Y={2:0.0}, W={3:0.0}, H={4:0.0}",
+                roi.Shape,
+                roi.Center.X,
+                roi.Center.Y,
+                roi.Width,
+                roi.Height));
+        }
+
+        /// <summary>
+        /// 格式化直线检测结果摘要。
+        /// </summary>
+        /// <param name="result">直线检测结果。</param>
+        /// <returns>结果摘要文本。</returns>
+        private static string FormatLineDetectionResult(LineDetectionResult result)
+        {
+            if (result == null)
+            {
+                return "结果：未运行";
+            }
+
+            if (!result.Success)
+            {
+                return "结果：NG  " + result.Message;
+            }
+
+            return string.Format(
+                "结果：OK  角度={0:0.00}°  强度={1:0.0}  耗时={2:0.0}ms",
+                result.Angle,
+                result.AverageStrength,
+                result.Elapsed.TotalMilliseconds);
+        }
+
+        /// <summary>
+        /// 从节点中读取当前直线查找参数。
+        /// </summary>
+        /// <param name="node">流程节点。</param>
+        /// <returns>返回直线检测参数；未配置时返回默认参数。</returns>
+        private static LineDetectionParams ResolveLineDetectionParams(FlowNode node)
+        {
+            LineFindOperatorParameters parameters = null;
+            if (node != null && node.SelectedOperator != null)
+            {
+                parameters = node.SelectedOperator.Parameters as LineFindOperatorParameters;
+            }
+
+            if (parameters == null && node != null)
+            {
+                FlowOperator flowOperator = node.Operators.FirstOrDefault(x => x.Parameters is LineFindOperatorParameters);
+                parameters = flowOperator == null ? null : flowOperator.Parameters as LineFindOperatorParameters;
+            }
+
+            return parameters == null ? new LineDetectionParams() : parameters.ToLineDetectionParams();
+        }
+
+        /// <summary>
+        /// 按算子运行快照回写流程图中所有 WPF 绑定对象。
+        /// </summary>
+        /// <param name="nodes">需要更新的流程节点集合。</param>
+        /// <param name="records">算子运行快照集合。</param>
+        /// <returns>无返回值。</returns>
+        private static void ApplyVisionOperatorResults(System.Collections.Generic.IEnumerable<FlowNode> nodes, System.Collections.Generic.IEnumerable<VisionOperatorRunRecord> records)
+        {
+            if (nodes == null || records == null)
+            {
+                return;
+            }
+
+            System.Collections.Generic.List<VisionOperatorRunRecord> recordList = records.ToList();
+            foreach (FlowNode node in nodes)
+            {
+                ApplyVisionOperatorResults(node, recordList);
+                ApplyOperatorBlockStatus(node);
+                foreach (FlowBranch branch in node.Branches)
+                {
+                    ApplyVisionOperatorResults(branch.Nodes, recordList);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 根据块内算子结果聚合算子块颜色状态。
+        /// </summary>
+        /// <param name="node">需要聚合的流程块。</param>
+        /// <returns>无返回值。</returns>
+        private static void ApplyOperatorBlockStatus(FlowNode node)
+        {
+            if (node == null || !node.IsOperatorBlock || node.Operators.Count == 0)
+            {
+                return;
+            }
+
+            if (node.Operators.Any(x => x.Status == FlowNodeStatus.NG))
+            {
+                node.Status = FlowNodeStatus.NG;
+                return;
+            }
+
+            if (node.Operators.All(x => x.Status == FlowNodeStatus.OK))
+            {
+                node.Status = FlowNodeStatus.OK;
+            }
+        }
+
+        /// <summary>
+        /// 按算子运行快照回写 WPF 绑定对象。
+        /// </summary>
+        /// <param name="node">需要更新的流程节点。</param>
+        /// <param name="records">算子运行快照集合。</param>
+        /// <returns>无返回值。</returns>
+        private static void ApplyVisionOperatorResults(FlowNode node, System.Collections.Generic.IEnumerable<VisionOperatorRunRecord> records)
+        {
+            if (node == null || records == null)
+            {
+                return;
+            }
+
+            System.Collections.Generic.HashSet<Guid> appliedOperatorIds = new System.Collections.Generic.HashSet<Guid>();
+            foreach (VisionOperatorRunRecord record in records)
+            {
+                FlowOperator flowOperator = node.Operators.FirstOrDefault(x => x.Id == record.OperatorId);
+                if (flowOperator == null)
+                {
+                    continue;
+                }
+
+                flowOperator.Status = record.Status;
+                flowOperator.ElapsedMilliseconds = record.ElapsedMilliseconds;
+                flowOperator.LastMessage = record.Message;
+                flowOperator.Payload = record.Payload is OpenCvSharp.Mat || record.Payload is ImageFrameToken ? null : record.Payload;
+                appliedOperatorIds.Add(record.OperatorId);
+            }
+
+            foreach (FlowOperator flowOperator in node.Operators)
+            {
+                if (flowOperator.Status == FlowNodeStatus.Running && !appliedOperatorIds.Contains(flowOperator.Id))
+                {
+                    flowOperator.Status = FlowNodeStatus.Stopped;
+                    flowOperator.ElapsedMilliseconds = 0;
+                    flowOperator.LastMessage = "未执行";
+                    flowOperator.Payload = null;
+                }
+            }
         }
 
         /// <summary>
@@ -80,6 +385,141 @@ namespace MyFlowChart
 
             e.Effects = DragDropEffects.Copy;
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// 处理右侧算子列表双击，打开标准算子编辑窗口。
+        /// </summary>
+        /// <param name="sender">算子列表控件。</param>
+        /// <param name="e">鼠标事件参数。</param>
+        /// <returns>无返回值。</returns>
+        private void OperatorList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            MainWindowViewModel viewModel = GetViewModel();
+            if (viewModel == null || !viewModel.CanEditVisionWorkflow)
+            {
+                return;
+            }
+
+            ListBox listBox = sender as ListBox;
+            if (listBox == null)
+            {
+                return;
+            }
+
+            ListBoxItem item = FindListBoxItem(listBox, e.GetPosition(listBox));
+            FlowOperator flowOperator = item == null ? listBox.SelectedItem as FlowOperator : item.DataContext as FlowOperator;
+            OperatorEditorKind editorKind = flowOperator == null
+                ? OperatorEditorKind.None
+                : OperatorDefinition.GetEditorKind(flowOperator.OperatorName);
+            if (editorKind == OperatorEditorKind.None)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            OpenOperatorEditor(flowOperator, editorKind);
+        }
+
+        /// <summary>
+        /// 按算子编辑器类型打开标准配置窗口。
+        /// </summary>
+        /// <param name="flowOperator">待编辑的流程算子。</param>
+        /// <param name="editorKind">算子编辑器类型。</param>
+        /// <returns>无返回值。</returns>
+        private void OpenOperatorEditor(FlowOperator flowOperator, OperatorEditorKind editorKind)
+        {
+            switch (editorKind)
+            {
+                case OperatorEditorKind.ImageInput:
+                    OpenImageInputOperatorEditor(flowOperator);
+                    break;
+                case OperatorEditorKind.LineFind:
+                    OpenLineFindOperatorEditor(flowOperator);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 打开图像采集算子的标准编辑窗口。
+        /// </summary>
+        /// <param name="flowOperator">待编辑的图像采集算子。</param>
+        /// <returns>无返回值。</returns>
+        private void OpenImageInputOperatorEditor(FlowOperator flowOperator)
+        {
+            ImageInputOperatorEditorWindow editor = new ImageInputOperatorEditorWindow(flowOperator)
+            {
+                Owner = this
+            };
+
+            if (editor.ShowDialog() != true || editor.EditedParameters == null)
+            {
+                return;
+            }
+
+            flowOperator.Parameters = editor.EditedParameters;
+            if (!string.IsNullOrWhiteSpace(editor.EditedParameters.ImagePath))
+            {
+                _imageViewer.LoadImage(editor.EditedParameters.ImagePath);
+                UpdateVisionRoiSummary();
+            }
+
+            if (editor.EditedStatus.HasValue)
+            {
+                flowOperator.Status = editor.EditedStatus.Value;
+                flowOperator.ElapsedMilliseconds = editor.EditedElapsedMilliseconds;
+                flowOperator.LastMessage = editor.EditedMessage;
+            }
+            else
+            {
+                flowOperator.Status = FlowNodeStatus.NotRun;
+                flowOperator.ElapsedMilliseconds = 0;
+                flowOperator.LastMessage = "参数已更新";
+            }
+
+            MainWindowViewModel viewModel = GetViewModel();
+            if (viewModel != null && viewModel.SelectedNode != null)
+            {
+                viewModel.RefreshVisionRunLogs(viewModel.SelectedNode);
+            }
+        }
+
+        /// <summary>
+        /// 打开直线查找算子的标准编辑窗口。
+        /// </summary>
+        /// <param name="flowOperator">待编辑的直线查找算子。</param>
+        /// <returns>无返回值。</returns>
+        private void OpenLineFindOperatorEditor(FlowOperator flowOperator)
+        {
+            VisionOperatorEditorWindow editor = new VisionOperatorEditorWindow(flowOperator, _imageViewer.ImageMat)
+            {
+                Owner = this
+            };
+
+            if (editor.ShowDialog() != true || editor.EditedParameters == null)
+            {
+                return;
+            }
+
+            flowOperator.Parameters = editor.EditedParameters;
+            if (editor.EditedStatus.HasValue)
+            {
+                flowOperator.Status = editor.EditedStatus.Value;
+                flowOperator.ElapsedMilliseconds = editor.EditedElapsedMilliseconds;
+                flowOperator.LastMessage = editor.EditedMessage;
+            }
+            else
+            {
+                flowOperator.Status = FlowNodeStatus.NotRun;
+                flowOperator.ElapsedMilliseconds = 0;
+                flowOperator.LastMessage = "参数已更新";
+            }
+
+            MainWindowViewModel viewModel = GetViewModel();
+            if (viewModel != null && viewModel.SelectedNode != null)
+            {
+                viewModel.RefreshVisionRunLogs(viewModel.SelectedNode);
+            }
         }
 
         /// <summary>
@@ -144,7 +584,14 @@ namespace MyFlowChart
         /// <returns>可放入时返回 true，否则返回 false。</returns>
         private bool CanDropOperatorToList(FlowNode targetNode, DragEventArgs e)
         {
-            return flowChart != null && !flowChart.IsRunning && targetNode != null && targetNode.CanConfigureOperators && GetDragOperatorData(e) != null;
+            MainWindowViewModel viewModel = GetViewModel();
+            return viewModel != null
+                && viewModel.CanEditVisionWorkflow
+                && flowChart != null
+                && !flowChart.IsRunning
+                && targetNode != null
+                && targetNode.CanConfigureOperators
+                && GetDragOperatorData(e) != null;
         }
 
         /// <summary>
@@ -320,6 +767,21 @@ namespace MyFlowChart
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// 释放视觉控件和流程运行器资源。
+        /// </summary>
+        /// <param name="e">窗口关闭事件参数。</param>
+        /// <returns>无返回值。</returns>
+        protected override void OnClosed(EventArgs e)
+        {
+            _imageViewer.SelectedRoiChanged -= ImageViewer_RoiChanged;
+            _imageViewer.RoiChanged -= ImageViewer_RoiChanged;
+            _imageViewer.RoiEditCompleted -= ImageViewer_RoiChanged;
+            _visionRunner?.Dispose();
+            _imageViewer?.Dispose();
+            base.OnClosed(e);
         }
 
         private sealed class OperatorInsertAdorner : Adorner

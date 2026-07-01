@@ -112,7 +112,7 @@
                             </Grid.ColumnDefinitions>
 
                             <Border x:Name="StatusStrip"
-                                    Background="#38D99A"
+                                    Background="#B9C5C2"
                                     CornerRadius="4,0,0,4" />
 
                             <Border Grid.Column="1"
@@ -150,15 +150,11 @@
                                         Margin="0,0,8,0"
                                         VerticalAlignment="Center">
                                 <Border x:Name="StatusPill"
-                                        Height="20"
-                                        Background="#EEF2F1"
-                                        CornerRadius="10">
-                                    <TextBlock HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               FontSize="10"
-                                               Foreground="#51625F"
-                                               Text="{Binding StatusText}" />
-                                </Border>
+                                        Width="14"
+                                        Height="14"
+                                        HorizontalAlignment="Center"
+                                        Background="#B9C5C2"
+                                        CornerRadius="7" />
                                 <TextBlock Margin="0,3,0,0"
                                            HorizontalAlignment="Center"
                                            FontSize="9"
@@ -449,25 +445,13 @@
                             Value="Visible" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Status}"
-                             Value="{x:Static models:FlowNodeStatus.Running}">
-                    <Setter TargetName="NodeBox"
-                            Property="Background"
-                            Value="#F2F7FF" />
-                    <Setter TargetName="StatusStrip"
-                            Property="Background"
-                            Value="#3D7DFF" />
-                    <Setter TargetName="StatusPill"
-                            Property="Background"
-                            Value="#DCEAFF" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Status}"
                              Value="{x:Static models:FlowNodeStatus.OK}">
                     <Setter TargetName="StatusStrip"
                             Property="Background"
                             Value="#38D99A" />
                     <Setter TargetName="StatusPill"
                             Property="Background"
-                            Value="#DDF8EC" />
+                            Value="#38D99A" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Status}"
                              Value="{x:Static models:FlowNodeStatus.NG}">
@@ -479,19 +463,7 @@
                             Value="#E65757" />
                     <Setter TargetName="StatusPill"
                             Property="Background"
-                            Value="#FFE3E3" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Status}"
-                             Value="{x:Static models:FlowNodeStatus.Stopped}">
-                    <Setter TargetName="NodeBox"
-                            Property="BorderBrush"
-                            Value="#E8A438" />
-                    <Setter TargetName="StatusStrip"
-                            Property="Background"
-                            Value="#E8A438" />
-                    <Setter TargetName="StatusPill"
-                            Property="Background"
-                            Value="#FFF0D9" />
+                            Value="#E65757" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>

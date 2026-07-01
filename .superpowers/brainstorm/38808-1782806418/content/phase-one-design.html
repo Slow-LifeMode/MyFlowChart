@@ -1,0 +1,61 @@
+<h2>第一阶段：视觉任务链闭环</h2>
+<p class="subtitle">我决定先做 A。核心目标：不推翻现有流程图，先让一个真实视觉任务从配置到运行到结果展示跑通。</p>
+
+<div class="mockup">
+  <div class="mockup-header">目标工作区</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:220px 1fr 320px;gap:14px;min-height:360px;">
+      <div class="mock-sidebar">
+        <div class="label">算子库</div>
+        <div class="placeholder" style="margin-top:10px;">图像采集</div>
+        <div class="placeholder" style="margin-top:8px;">预处理</div>
+        <div class="placeholder" style="margin-top:8px;">检测</div>
+        <div class="placeholder" style="margin-top:8px;">结果输出</div>
+      </div>
+
+      <div class="mock-content">
+        <div class="label">流程画布</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:54px;">
+          <div class="placeholder" style="width:92px;">Start</div>
+          <div style="font-size:26px;">→</div>
+          <div class="placeholder" style="width:170px;">算子块<br>采集 / 预处理 / 检测</div>
+          <div style="font-size:26px;">→</div>
+          <div class="placeholder" style="width:92px;">End</div>
+        </div>
+        <div class="placeholder" style="margin-top:48px;">状态：运行中 / OK / NG / 耗时</div>
+      </div>
+
+      <div class="mock-sidebar">
+        <div class="label">右侧属性 + 结果</div>
+        <div class="placeholder" style="margin-top:10px;">参数编辑</div>
+        <div class="placeholder" style="margin-top:8px;">当前图像</div>
+        <div class="placeholder" style="margin-top:8px;">执行日志</div>
+        <div class="placeholder" style="margin-top:8px;">结果值</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option selected" data-choice="phase-one">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>第一步只做一条可运行链</h3>
+      <p>导入图像、拖入算子、运行流程、显示每个算子的状态和结果。暂不做项目文件、权限、相机 SDK、复杂脚本。</p>
+    </div>
+  </div>
+  <div class="option selected" data-choice="architecture">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>架构只新增必要边界</h3>
+      <p>保留 FlowNode / FlowOperator；新增轻量执行服务和结果上下文，把业务执行从 FlowChartControl.xaml.cs 里慢慢拿出来。</p>
+    </div>
+  </div>
+  <div class="option selected" data-choice="ui">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>UI 风格在闭环上一起升级</h3>
+      <p>先调整主工作区密度、状态显示和结果面板，不做整套主题系统。</p>
+    </div>
+  </div>
+</div>

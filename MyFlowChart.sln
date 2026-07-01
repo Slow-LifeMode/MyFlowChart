@@ -5,6 +5,8 @@ VisualStudioVersion = 17.13.35828.75 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFlowChart", "MyFlowChart.csproj", "{8527BF21-E17F-4D7B-9537-3C0F7786AC29}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCvWindowTool", "OpenCvWindowTool\OpenCvWindowTool.csproj", "{B3A191BE-7FC0-4D2E-9753-91EEDE53AB13}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{8527BF21-E17F-4D7B-9537-3C0F7786AC29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8527BF21-E17F-4D7B-9537-3C0F7786AC29}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8527BF21-E17F-4D7B-9537-3C0F7786AC29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3A191BE-7FC0-4D2E-9753-91EEDE53AB13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3A191BE-7FC0-4D2E-9753-91EEDE53AB13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3A191BE-7FC0-4D2E-9753-91EEDE53AB13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3A191BE-7FC0-4D2E-9753-91EEDE53AB13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

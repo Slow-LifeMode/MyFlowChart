@@ -1,0 +1,63 @@
+<h2>第一阶段先打通哪条闭环？</h2>
+<p class="subtitle">目标是从现有拖拽流程图，走向 OPT / 海康这类视觉流程系统。先选一个最小闭环，避免一开始就铺太大。</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A · 推荐：任务链闭环</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;align-items:stretch;">
+            <div class="placeholder">图像输入</div>
+            <div class="placeholder">流程画布<br>算子块 + 参数</div>
+            <div class="placeholder">运行结果<br>状态 / 耗时</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>先做“导入图像 → 配置算子 → 单步运行 → 显示结果”</h3>
+      <p>最像真正视觉软件的核心体验，能最快验证数据模型、UI、执行状态是否走得通。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B · UI 风格先行</div>
+        <div class="mockup-body">
+          <div class="mock-nav">顶部工具区 / 深色标题 / 状态灯</div>
+          <div style="display:flex;gap:12px;margin-top:12px;">
+            <div class="mock-sidebar">算子库</div>
+            <div class="mock-content">画布</div>
+            <div class="mock-sidebar">属性</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>先重塑窗口布局和视觉风格</h3>
+      <p>会更快“看起来像产品”，但如果核心运行链没定，后面可能还要返工。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C · 节点引擎先行</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+            <div class="placeholder">端口</div>
+            <div class="placeholder">连线</div>
+            <div class="placeholder">执行</div>
+            <div class="placeholder">缓存</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>先做视觉节点数据流内核</h3>
+      <p>架构最硬，但短期看不到完整产品体验，容易变成大而慢的重构。</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,24 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!-- 工业视觉系统的紧凑布局令牌。 -->
+    <Thickness x:Key="AppShellPadding">10</Thickness>
+    <Thickness x:Key="PanelPadding">12</Thickness>
+    <Thickness x:Key="PanelCompactPadding">8</Thickness>
+    <Thickness x:Key="FieldRowMargin">0,0,0,8</Thickness>
+    <Thickness x:Key="DenseItemPadding">8,6</Thickness>
+
+    <sys:Double x:Key="ToolbarHeight">44</sys:Double>
+    <sys:Double x:Key="PropertyRowHeight">34</sys:Double>
+    <sys:Double x:Key="OperatorItemHeight">40</sys:Double>
+    <sys:Double x:Key="PanelGap">10</sys:Double>
+
+    <CornerRadius x:Key="PanelCornerRadius">6</CornerRadius>
+    <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+    <CornerRadius x:Key="BadgeCornerRadius">3</CornerRadius>
+
+    <sys:Double x:Key="TitleFontSize">18</sys:Double>
+    <sys:Double x:Key="SectionFontSize">14</sys:Double>
+    <sys:Double x:Key="BodyFontSize">12</sys:Double>
+    <sys:Double x:Key="StatusFontSize">11</sys:Double>
+</ResourceDictionary>

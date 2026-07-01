@@ -1,0 +1,35 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 深色工业主题色彩令牌，后续主题切换时与浅色键名保持一致。 -->
+    <Color x:Key="AppBackgroundColor">#11161D</Color>
+    <Color x:Key="PanelBackgroundColor">#1A222C</Color>
+    <Color x:Key="PanelAltBackgroundColor">#222C38</Color>
+    <Color x:Key="PanelStrongBackgroundColor">#2B3745</Color>
+    <Color x:Key="BorderColor">#354456</Color>
+    <Color x:Key="TextPrimaryColor">#F3F6FA</Color>
+    <Color x:Key="TextSecondaryColor">#B6C2D0</Color>
+    <Color x:Key="PrimaryColor">#60A5FA</Color>
+    <Color x:Key="AccentColor">#2DD4BF</Color>
+    <Color x:Key="SuccessColor">#4ADE80</Color>
+    <Color x:Key="WarningColor">#FBBF24</Color>
+    <Color x:Key="ErrorColor">#F87171</Color>
+    <Color x:Key="RunningColor">#22D3EE</Color>
+    <Color x:Key="DisabledColor">#64748B</Color>
+    <Color x:Key="RoiColor">#38BDF8</Color>
+    <Color x:Key="DetectionLineColor">#4ADE80</Color>
+
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}" />
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource PanelBackgroundColor}" />
+    <SolidColorBrush x:Key="PanelAltBackgroundBrush" Color="{StaticResource PanelAltBackgroundColor}" />
+    <SolidColorBrush x:Key="PanelStrongBackgroundBrush" Color="{StaticResource PanelStrongBackgroundColor}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+    <SolidColorBrush x:Key="RunningBrush" Color="{StaticResource RunningColor}" />
+    <SolidColorBrush x:Key="DisabledBrush" Color="{StaticResource DisabledColor}" />
+</ResourceDictionary>

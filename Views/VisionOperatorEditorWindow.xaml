@@ -1,0 +1,258 @@
+<Window x:Class="MyFlowChart.Views.VisionOperatorEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
+        Title="{Binding OperatorName}"
+        Width="1260"
+        Height="780"
+        MinWidth="1020"
+        MinHeight="640"
+        WindowStartupLocation="CenterOwner"
+        Background="#F4F7F6">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <Style x:Key="EditorNavButtonStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Margin" Value="10,4" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Foreground" Value="#EAF2F0" />
+            <Setter Property="Background" Value="#263432" />
+            <Setter Property="BorderBrush" Value="#324440" />
+            <Setter Property="FontSize" Value="13" />
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Foreground" Value="#0F1716" />
+                    <Setter Property="Background" Value="#37D39B" />
+                    <Setter Property="BorderBrush" Value="#37D39B" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="EditorButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="Padding" Value="12,0" />
+        </Style>
+
+        <Style x:Key="EditorLabelStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="#50605C" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="EditorTextBoxStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="8,0" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="54" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="164" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="330" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#1F2A28">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Margin="16,18,16,12"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFF"
+                               Text="{Binding OperatorName}" />
+                    <StackPanel>
+                        <ToggleButton Content="输入图像"
+                                      Command="{Binding ShowInputCommand}"
+                                      IsChecked="{Binding IsInputModule, Mode=OneWay}"
+                                      Style="{StaticResource EditorNavButtonStyle}" />
+                        <ToggleButton Content="ROI"
+                                      Command="{Binding ShowRoiCommand}"
+                                      IsChecked="{Binding IsRoiModule, Mode=OneWay}"
+                                      Style="{StaticResource EditorNavButtonStyle}" />
+                        <ToggleButton Content="参数"
+                                      Command="{Binding ShowParamsCommand}"
+                                      IsChecked="{Binding IsParamsModule, Mode=OneWay}"
+                                      Style="{StaticResource EditorNavButtonStyle}" />
+                        <ToggleButton Content="结果"
+                                      Command="{Binding ShowResultCommand}"
+                                      IsChecked="{Binding IsResultModule, Mode=OneWay}"
+                                      Style="{StaticResource EditorNavButtonStyle}" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Margin="10"
+                    Background="#111111"
+                    BorderBrush="#C8D4D0"
+                    BorderThickness="1">
+                <wfi:WindowsFormsHost x:Name="FormsHost" />
+            </Border>
+
+            <Border Grid.Column="2"
+                    Background="#FFFFFF"
+                    BorderBrush="#D8E0DD"
+                    BorderThickness="1,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="18">
+                        <StackPanel Visibility="{Binding IsInputModule, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="输入图像" />
+                            <TextBlock Margin="0,12,0,0"
+                                       Foreground="#50605C"
+                                       Text="{Binding ImageStatus}"
+                                       TextWrapping="Wrap" />
+                            <Button Content="适应窗口"
+                                    Click="FitImage_Click"
+                                    Style="{StaticResource EditorButtonStyle}" />
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding IsRoiModule, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="ROI" />
+                            <Button Content="创建矩形 ROI"
+                                    Click="CreateRectangleRoi_Click"
+                                    Style="{StaticResource EditorButtonStyle}" />
+                            <Button Content="创建旋转矩形 ROI"
+                                    Click="CreateRotatedRectangleRoi_Click"
+                                    Style="{StaticResource EditorButtonStyle}" />
+                            <Button Content="清除 ROI"
+                                    Click="ClearRoi_Click"
+                                    Style="{StaticResource EditorButtonStyle}" />
+                            <TextBlock Margin="0,12,0,0"
+                                       Foreground="#50605C"
+                                       Text="{Binding RoiStatus}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding IsParamsModule, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="参数设置" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="检测模式" />
+                            <ComboBox ItemsSource="{Binding DetectionModes}"
+                                      DisplayMemberPath="Text"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Parameters.DetectionMode, Mode=TwoWay}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="ROI检测方向" />
+                            <ComboBox ItemsSource="{Binding ScanDirections}"
+                                      DisplayMemberPath="Text"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Parameters.ScanDirection, Mode=TwoWay}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="ROI边缘极性" />
+                            <ComboBox ItemsSource="{Binding EdgePolarities}"
+                                      DisplayMemberPath="Text"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Parameters.EdgePolarity, Mode=TwoWay}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="边缘选择方式" />
+                            <ComboBox ItemsSource="{Binding SelectionModes}"
+                                      DisplayMemberPath="Text"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Parameters.SelectionMode, Mode=TwoWay}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="拟合直线方式" />
+                            <ComboBox ItemsSource="{Binding FitModes}"
+                                      DisplayMemberPath="Text"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Parameters.FitMode, Mode=TwoWay}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="边缘阈值" />
+                            <TextBox Style="{StaticResource EditorTextBoxStyle}"
+                                     Text="{Binding Parameters.EdgeThreshold, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="检测点个数" />
+                            <TextBox Style="{StaticResource EditorTextBoxStyle}"
+                                     Text="{Binding Parameters.SampleCount, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="边缘宽度(像素)" />
+                            <TextBox Style="{StaticResource EditorTextBoxStyle}"
+                                     Text="{Binding Parameters.EdgeWidth, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="投影宽度(像素)" />
+                            <TextBox Style="{StaticResource EditorTextBoxStyle}"
+                                     Text="{Binding Parameters.ProjectionWidth, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="剔除比例" />
+                            <TextBox Style="{StaticResource EditorTextBoxStyle}"
+                                     Text="{Binding Parameters.RejectRatio, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="剔除距离(像素)" />
+                            <TextBox Style="{StaticResource EditorTextBoxStyle}"
+                                     Text="{Binding Parameters.RejectDistance, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                            <TextBlock Style="{StaticResource EditorLabelStyle}" Text="剖面图搜索线编号" />
+                            <TextBox Style="{StaticResource EditorTextBoxStyle}"
+                                     Text="{Binding Parameters.ProfileLineIndex, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                            <CheckBox Margin="0,12,0,0"
+                                      Content="显示搜索线"
+                                      IsChecked="{Binding Parameters.ShowSearchLines, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding IsResultModule, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="结果输出" />
+                            <TextBlock Margin="0,12,0,0"
+                                       FontWeight="SemiBold"
+                                       Text="{Binding ResultStatus}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,8,0,0"
+                                       Foreground="#50605C"
+                                       Text="{Binding ResultLine}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="1"
+                Background="#FFFFFF"
+                BorderBrush="#D8E0DD"
+                BorderThickness="0,1,0,0">
+            <DockPanel Margin="12,8">
+                <StackPanel DockPanel.Dock="Left"
+                            Orientation="Horizontal">
+                    <Button Width="92"
+                            Content="预览"
+                            Click="Preview_Click"
+                            Style="{StaticResource EditorButtonStyle}" />
+                    <Button Width="92"
+                            Margin="8,4,0,0"
+                            Content="运行一次"
+                            Click="RunOnce_Click"
+                            Style="{StaticResource EditorButtonStyle}" />
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Right"
+                            Orientation="Horizontal">
+                    <Button Width="92"
+                            Content="应用"
+                            Click="Apply_Click"
+                            Style="{StaticResource EditorButtonStyle}" />
+                    <Button Width="92"
+                            Margin="8,4,0,0"
+                            Content="取消"
+                            Click="Cancel_Click"
+                            Style="{StaticResource EditorButtonStyle}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

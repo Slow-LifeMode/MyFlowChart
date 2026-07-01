@@ -1,0 +1,63 @@
+<h2>最终约束：直接纳入 OpencvMaster</h2>
+<p class="subtitle">不再称为借用。把 OpenCvWindowTool 作为当前项目的一部分直接使用；直线检测逻辑保持原样。</p>
+
+<div class="mockup">
+  <div class="mockup-header">纳入方式</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="placeholder">
+        <div class="label">复制进当前仓库</div>
+        <div>D:\Aopencv\MyFlowChart\OpenCvWindowTool</div>
+        <div style="margin-top:8px;">从 D:\Aopencv\OpencvMaster\OpenCvWindowTool 原样复制</div>
+      </div>
+      <div class="placeholder">
+        <div class="label">项目引用</div>
+        <div>MyFlowChart.csproj → OpenCvWindowTool.csproj</div>
+        <div style="margin-top:8px;">当前 WPF 程序直接使用控件与算法类型</div>
+      </div>
+      <div class="placeholder">
+        <div class="label">冻结检测核心</div>
+        <div>LineDetectionOperator / OptLineDetectionOperator</div>
+        <div style="margin-top:8px;">LineDetectionModels / LineDetectionImageContext / RoiItem 保持行为不变</div>
+      </div>
+      <div class="placeholder">
+        <div class="label">允许修改的区域</div>
+        <div>MyFlowChart 的执行层、UI、参数绑定、结果显示</div>
+        <div style="margin-top:8px;">必要时只改 OpenCvWindowTool 的项目包装，不改检测逻辑</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">保证算法一致</div>
+    <div class="mockup-body">
+      <div class="placeholder">复制后先记录核心文件哈希</div>
+      <div style="text-align:center;margin:8px;">↓</div>
+      <div class="placeholder">实现期间不改核心文件</div>
+      <div style="text-align:center;margin:8px;">↓</div>
+      <div class="placeholder">验收前再次对比哈希</div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">应用架构</div>
+    <div class="mockup-body">
+      <div class="placeholder">UI 线程：显示 / ROI / 参数</div>
+      <div style="text-align:center;margin:8px;">↓ 命令触发</div>
+      <div class="placeholder">后台执行：VisionWorkflowRunner</div>
+      <div style="text-align:center;margin:8px;">↓ 传图像引用</div>
+      <div class="placeholder">OpenCvWindowTool：原检测逻辑</div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option selected" data-choice="approved">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>下一步</h3>
+      <p>我会按这版写设计文档：直接纳入、检测核心不可改、UI/执行/数据流/扩展机制分层。</p>
+    </div>
+  </div>
+</div>

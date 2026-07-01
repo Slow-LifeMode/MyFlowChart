@@ -16,6 +16,8 @@ Last reviewed: 2026-06-23
 - `Models/FlowBranch.cs`: branch lane model for Switch/Thread blocks.
 - `Models/FlowOperator.cs`: operator item inside an operator block.
 - `Models/FlowBlockKind.cs`: block types: `Start`, `OperatorBlock`, `Goto`, `Switch`, `Thread`, `End`.
+- `docs/OPERATOR_DEVELOPMENT.md`: rules for adding built-in operators, parameters, editor windows, and verification.
+- `Views/ImageInputOperatorEditorWindow.xaml`: standard editor window for the image input operator.
 
 ## Current Flowchart Behavior
 
@@ -71,6 +73,14 @@ Run rule:
   - delete block
 - Start and End blocks are fixed, so destructive context-menu operations are disabled for them.
 
+## Vision Workflow Integration
+
+- `OpenCvWindowTool` is included as source under this repository.
+- The copied line-detection core files must remain hash-identical to `D:\Aopencv\OpencvMaster`.
+- `MainWindow` hosts `OpenCvImageViewer` inside a fixed `WindowsFormsHost` pane under the flowchart canvas.
+- Keep WPF panels, popups, and drawers outside the image-host area to avoid WinForms airspace clipping.
+- Use `Services/Vision` for background operator execution and keep UI code as a thin viewer/file-dialog bridge.
+
 ## Build And Verification
 
 Use Visual Studio MSBuild:
@@ -89,6 +99,7 @@ Latest verification in this session:
 
 - Temporary output build succeeded with `0 warnings, 0 errors`.
 - `git diff --check` passed; Git may still warn that LF will be replaced by CRLF.
+- Vision integration can be verified with `.\tools\VerifyVisionIntegration.ps1`.
 
 ## Development Notes
 

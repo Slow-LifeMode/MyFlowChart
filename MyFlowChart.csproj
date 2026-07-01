@@ -14,6 +14,7 @@
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -43,12 +44,24 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="WindowsFormsIntegration" />
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
+    <PackageReference Include="iNKORE.UI.WPF.Modern" Version="0.10.2.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="$(UserProfile)\.nuget\packages\communitytoolkit.mvvm\8.4.0\analyzers\dotnet\roslyn4.3\cs\CommunityToolkit.Mvvm.SourceGenerators.dll" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -64,6 +77,26 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\ImageInputOperatorEditorWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\VisionOperatorEditorWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Themes\IndustrialFluent.Tokens.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Themes\IndustrialFluent.Light.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Themes\IndustrialFluent.Dark.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -89,9 +122,34 @@
     <Compile Include="Models\FlowNode.cs" />
     <Compile Include="Models\FlowNodeStatus.cs" />
     <Compile Include="Models\FlowOperator.cs" />
+    <Compile Include="Models\ImageInputOperatorParameters.cs" />
+    <Compile Include="Models\LineFindOperatorParameters.cs" />
     <Compile Include="Models\OperatorDefinition.cs" />
     <Compile Include="Models\RelayCommand.cs" />
+    <Compile Include="Models\VisualNodeModels.cs" />
+    <Compile Include="Services\Vision\ImageFrameToken.cs" />
+    <Compile Include="Services\Vision\ImageInputOperatorExecutor.cs" />
+    <Compile Include="Services\Vision\IVisionOperatorExecutor.cs" />
+    <Compile Include="Services\Vision\LineFindOperatorExecutor.cs" />
+    <Compile Include="Services\Vision\OperatorCatalog.cs" />
+    <Compile Include="Services\Vision\PlaceholderOperatorExecutor.cs" />
+    <Compile Include="Services\Vision\VisionOperatorRunRecord.cs" />
+    <Compile Include="Services\Vision\VisionOperatorWorkItem.cs" />
+    <Compile Include="Services\Vision\ResultOutputOperatorExecutor.cs" />
+    <Compile Include="Services\Vision\VisionDataKeys.cs" />
+    <Compile Include="Services\Vision\VisionOperatorResult.cs" />
+    <Compile Include="Services\Vision\VisionRunContext.cs" />
+    <Compile Include="Services\Vision\VisionWorkflowRunner.cs" />
+    <Compile Include="ViewModels\ImageInputOperatorEditorViewModel.cs" />
+    <Compile Include="ViewModels\LineFindOperatorEditorViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="ViewModels\VisionRunLogItem.cs" />
+    <Compile Include="Views\ImageInputOperatorEditorWindow.xaml.cs">
+      <DependentUpon>ImageInputOperatorEditorWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\VisionOperatorEditorWindow.xaml.cs">
+      <DependentUpon>VisionOperatorEditorWindow.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -118,6 +176,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="OpenCvWindowTool\OpenCvWindowTool.csproj">
+      <Project>{B3A191BE-7FC0-4D2E-9753-91EEDE53AB13}</Project>
+      <Name>OpenCvWindowTool</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,0 +1,68 @@
+<h2>修订后的第一阶段架构</h2>
+<p class="subtitle">借用 D:\Aopencv\OpencvMaster 的直线查找算子和显示控件，同时保证 UI 与算法解耦、图像少复制、算子可扩展。</p>
+
+<div class="mockup">
+  <div class="mockup-header">四层边界</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="placeholder">
+        <div class="label">UI 层</div>
+        <div>WPF Shell / FlowChartControl / WindowsFormsHost</div>
+        <div style="margin-top:8px;">OpenCvImageViewer 只负责显示、ROI、叠加图层</div>
+      </div>
+      <div class="placeholder">
+        <div class="label">ViewModel 层</div>
+        <div>MainWindowViewModel 保存选中节点、参数、运行状态</div>
+        <div style="margin-top:8px;">命令触发，不直接跑 OpenCV</div>
+      </div>
+      <div class="placeholder">
+        <div class="label">执行层</div>
+        <div>VisionWorkflowRunner 后台执行</div>
+        <div style="margin-top:8px;">按 FlowOperator 找到对应算子执行器</div>
+      </div>
+      <div class="placeholder">
+        <div class="label">算法与数据层</div>
+        <div>OpenCvWindowTool 项目引用</div>
+        <div style="margin-top:8px;">LineDetectionImageContext 缓存灰度图，LineDetectionOperator / OptLineDetectionOperator 执行检测</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">运行数据流</div>
+    <div class="mockup-body">
+      <div class="placeholder">导入 Mat</div>
+      <div style="text-align:center;margin:8px;">↓ 一次灰度缓存</div>
+      <div class="placeholder">VisionImageFrame: Mat 引用 + LineDetectionImageContext</div>
+      <div style="text-align:center;margin:8px;">↓ 传引用，不按节点复制图像</div>
+      <div class="placeholder">直线查找算子读取缓存并输出 LineDetectionResult</div>
+      <div style="text-align:center;margin:8px;">↓ UI 线程显示</div>
+      <div class="placeholder">OpenCvImageViewer 显示图像与叠加结果</div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">扩展新算子</div>
+    <div class="mockup-body">
+      <div class="placeholder">新增一个执行器类</div>
+      <div style="text-align:center;margin:8px;">↓</div>
+      <div class="placeholder">注册到 OperatorCatalog</div>
+      <div style="text-align:center;margin:8px;">↓</div>
+      <div class="placeholder">算子库自动可拖拽</div>
+      <div style="text-align:center;margin:8px;">↓</div>
+      <div class="placeholder">参数面板显示对应参数</div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option selected" data-choice="confirm">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>我的建议</h3>
+      <p>第一阶段只实现：项目引用、图像显示窗、后台 Runner、图像采集/直线查找/结果输出三个执行器。稳定后再加更多算子和保存系统。</p>
+    </div>
+  </div>
+</div>

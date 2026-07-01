@@ -1,9 +1,17 @@
 ﻿<Application x:Class="MyFlowChart.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:MyFlowChart"
+             xmlns:modern="clr-namespace:iNKORE.UI.WPF.Modern;assembly=iNKORE.UI.WPF.Modern"
+             xmlns:modernControls="clr-namespace:iNKORE.UI.WPF.Modern.Controls;assembly=iNKORE.UI.WPF.Modern"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <modern:ThemeResources RequestedTheme="Light" />
+                <modernControls:XamlControlsResources />
+                <ResourceDictionary Source="Resources/Themes/IndustrialFluent.Tokens.xaml" />
+                <ResourceDictionary Source="Resources/Themes/IndustrialFluent.Light.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

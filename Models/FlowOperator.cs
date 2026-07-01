@@ -7,8 +7,11 @@ namespace MyFlowChart.Models
         private int _sequence;
         private string _operatorName;
         private string _displayName;
+        private object _parameters;
+        private object _payload;
         private FlowNodeStatus _status = FlowNodeStatus.NotRun;
         private double _elapsedMilliseconds;
+        private string _lastMessage;
         private readonly Guid _id = Guid.NewGuid();
 
         public Guid Id
@@ -25,13 +28,31 @@ namespace MyFlowChart.Models
         public string OperatorName
         {
             get { return _operatorName; }
-            set { Set(ref _operatorName, value); }
+            set
+            {
+                if (Set(ref _operatorName, value))
+                {
+                    Parameters = OperatorDefinition.CreateDefaultParameters(value);
+                }
+            }
         }
 
         public string DisplayName
         {
             get { return _displayName; }
             set { Set(ref _displayName, value); }
+        }
+
+        public object Parameters
+        {
+            get { return _parameters; }
+            set { Set(ref _parameters, value); }
+        }
+
+        public object Payload
+        {
+            get { return _payload; }
+            set { Set(ref _payload, value); }
         }
 
         public FlowNodeStatus Status
@@ -52,6 +73,12 @@ namespace MyFlowChart.Models
             set { Set(ref _elapsedMilliseconds, value); }
         }
 
+        public string LastMessage
+        {
+            get { return _lastMessage; }
+            set { Set(ref _lastMessage, value); }
+        }
+
         public string StatusText
         {
             get
@@ -70,6 +97,22 @@ namespace MyFlowChart.Models
                         return "not run";
                 }
             }
+        }
+
+        /// <summary>
+        /// 创建当前算子参数的独立副本。
+        /// </summary>
+        /// <returns>返回参数副本；没有参数时返回 null。</returns>
+        public object CloneParameters()
+        {
+            ImageInputOperatorParameters imageInputParameters = Parameters as ImageInputOperatorParameters;
+            if (imageInputParameters != null)
+            {
+                return imageInputParameters.Clone();
+            }
+
+            LineFindOperatorParameters lineFindParameters = Parameters as LineFindOperatorParameters;
+            return lineFindParameters == null ? null : lineFindParameters.Clone();
         }
     }
 }

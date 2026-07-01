@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:MyFlowChart.Controls"
         xmlns:models="clr-namespace:MyFlowChart.Models"
+        xmlns:openCv="clr-namespace:OpenCvWindowTool;assembly=OpenCvWindowTool"
         xmlns:viewModels="clr-namespace:MyFlowChart.ViewModels"
+        xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         mc:Ignorable="d"
         Title="MyFlowChart Demo" Height="620" Width="1180"
         MinHeight="520" MinWidth="960"
@@ -31,6 +33,137 @@
             <Setter Property="FontSize"
                     Value="12" />
         </Style>
+
+        <DataTemplate DataType="{x:Type models:LineFindOperatorParameters}">
+            <Border Margin="0,10,0,0"
+                    Padding="10"
+                    Background="#FFFFFF"
+                    BorderBrush="#D5DCE0"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <StackPanel>
+                    <TextBlock FontSize="13"
+                               FontWeight="SemiBold"
+                               Text="直线查找参数" />
+
+                     <UniformGrid Margin="0,10,0,0"
+                                  Columns="2">
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="检测模式" />
+                        <ComboBox Height="28"
+                                  Margin="0,0,0,6"
+                                  SelectedValue="{Binding DetectionMode, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Tag">
+                            <ComboBoxItem Content="SelfMode"
+                                          Tag="{x:Static openCv:LineDetectionMode.SelfMode}" />
+                            <ComboBoxItem Content="OPTMode"
+                                          Tag="{x:Static openCv:LineDetectionMode.OPTMode}" />
+                        </ComboBox>
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="边缘阈值" />
+                        <TextBox Height="28"
+                                 Margin="0,0,0,6"
+                                 Text="{Binding EdgeThreshold, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="扫描线数" />
+                        <TextBox Height="28"
+                                 Margin="0,0,0,6"
+                                 Text="{Binding SampleCount, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="采样步长" />
+                        <TextBox Height="28"
+                                 Margin="0,0,0,6"
+                                 Text="{Binding SampleStep, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="边缘宽度" />
+                        <TextBox Height="28"
+                                 Margin="0,0,0,6"
+                                 Text="{Binding EdgeWidth, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="投影宽度" />
+                        <TextBox Height="28"
+                                 Margin="0,0,0,6"
+                                 Text="{Binding ProjectionWidth, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="剔除比例" />
+                        <TextBox Height="28"
+                                 Margin="0,0,0,6"
+                                 Text="{Binding RejectRatio, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="剔除距离" />
+                        <TextBox Height="28"
+                                 Margin="0,0,0,6"
+                                 Text="{Binding RejectDistance, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="边缘极性" />
+                        <ComboBox Height="28"
+                                  Margin="0,0,0,6"
+                                  SelectedValue="{Binding EdgePolarity, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Tag">
+                            <ComboBoxItem Content="任意"
+                                          Tag="{x:Static openCv:LineEdgePolarity.Any}" />
+                            <ComboBoxItem Content="亮到暗"
+                                          Tag="{x:Static openCv:LineEdgePolarity.Negative}" />
+                            <ComboBoxItem Content="暗到亮"
+                                          Tag="{x:Static openCv:LineEdgePolarity.Positive}" />
+                        </ComboBox>
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="候选选择" />
+                        <ComboBox Height="28"
+                                  Margin="0,0,0,6"
+                                  SelectedValue="{Binding SelectionMode, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Tag">
+                            <ComboBoxItem Content="最强"
+                                          Tag="{x:Static openCv:LineSelectionMode.Strongest}" />
+                            <ComboBoxItem Content="第一个"
+                                          Tag="{x:Static openCv:LineSelectionMode.First}" />
+                            <ComboBoxItem Content="最后一个"
+                                          Tag="{x:Static openCv:LineSelectionMode.Last}" />
+                        </ComboBox>
+
+                        <TextBlock Margin="0,0,8,6"
+                                   VerticalAlignment="Center"
+                                   Text="扫描方向" />
+                        <ComboBox Height="28"
+                                  Margin="0,0,0,6"
+                                  SelectedValue="{Binding ScanDirection, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Tag">
+                            <ComboBoxItem Content="左到右"
+                                          Tag="{x:Static openCv:LineScanDirection.LeftToRight}" />
+                            <ComboBoxItem Content="右到左"
+                                          Tag="{x:Static openCv:LineScanDirection.RightToLeft}" />
+                            <ComboBoxItem Content="上到下"
+                                          Tag="{x:Static openCv:LineScanDirection.TopToBottom}" />
+                            <ComboBoxItem Content="下到上"
+                                          Tag="{x:Static openCv:LineScanDirection.BottomToTop}" />
+                        </ComboBox>
+                    </UniformGrid>
+
+                    <CheckBox Margin="0,4,0,0"
+                              Content="显示搜索线"
+                              IsChecked="{Binding ShowSearchLines}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
 
         <DataTemplate x:Key="SelectedBlockTemplate"
                       DataType="{x:Type models:FlowNode}">
@@ -141,12 +274,14 @@
                                 BorderBrush="#D5DCE0"
                                 BorderThickness="1"
                                 CornerRadius="4"
+                                IsEnabled="{Binding DataContext.CanEditVisionWorkflow, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                 Visibility="{Binding DataContext.ShowOperatorPanel, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <TextBlock FontSize="13"
@@ -181,6 +316,7 @@
                                          DragOver="OperatorList_DragOver"
                                          Drop="OperatorList_Drop"
                                          ItemsSource="{Binding Operators}"
+                                         MouseDoubleClick="OperatorList_MouseDoubleClick"
                                          SelectedItem="{Binding SelectedOperator}">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="{x:Type ListBoxItem}">
@@ -192,51 +328,117 @@
                                     </ListBox.ItemContainerStyle>
                                     <ListBox.ItemTemplate>
                                         <DataTemplate DataType="{x:Type models:FlowOperator}">
-                                            <Border Height="58"
+                                            <Border MinHeight="70"
                                                     Padding="8,6"
                                                     BorderBrush="#E0E4E6"
                                                     BorderThickness="0,0,0,1">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="28" />
-                                                        <ColumnDefinition Width="22" />
+                                                        <ColumnDefinition Width="18" />
                                                         <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="34" />
+                                                        <ColumnDefinition Width="58" />
                                                     </Grid.ColumnDefinitions>
 
                                                     <TextBlock VerticalAlignment="Center"
                                                                Foreground="#222222"
                                                                Text="{Binding Sequence}" />
                                                     <Ellipse Grid.Column="1"
-                                                             Width="13"
-                                                             Height="13"
-                                                             VerticalAlignment="Center"
-                                                             Fill="#9AA3AD" />
-                                                    <StackPanel Grid.Column="2">
+                                                             Width="11"
+                                                             Height="11"
+                                                             VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="{x:Type Ellipse}">
+                                                                <Setter Property="Fill"
+                                                                        Value="#9AA3AD" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Status}"
+                                                                                 Value="{x:Static models:FlowNodeStatus.Running}">
+                                                                        <Setter Property="Fill"
+                                                                                Value="#2D7DFF" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}"
+                                                                                 Value="{x:Static models:FlowNodeStatus.OK}">
+                                                                        <Setter Property="Fill"
+                                                                                Value="#28CFA8" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}"
+                                                                                 Value="{x:Static models:FlowNodeStatus.NG}">
+                                                                        <Setter Property="Fill"
+                                                                                Value="#D92B2B" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}"
+                                                                                 Value="{x:Static models:FlowNodeStatus.Stopped}">
+                                                                        <Setter Property="Fill"
+                                                                                Value="#E5A400" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <StackPanel Grid.Column="2"
+                                                                Margin="4,0,8,0">
                                                         <TextBlock FontSize="13"
                                                                    Text="{Binding DisplayName}" />
-                                                        <TextBlock Margin="0,5,0,0"
+                                                        <TextBlock Margin="0,4,0,0"
                                                                    FontSize="12"
-                                                                   Text="{Binding StatusText}" />
+                                                                   Foreground="#42526E"
+                                                                   Text="{Binding LastMessage}"
+                                                                   TextTrimming="CharacterEllipsis" />
                                                     </StackPanel>
-                                                    <Border Grid.Column="3"
-                                                            Width="18"
-                                                            Height="18"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Center"
-                                                            Background="#28CFA8"
-                                                            CornerRadius="9">
-                                                        <TextBlock HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center"
-                                                                   FontSize="9"
-                                                                   Foreground="#FFFFFF"
-                                                                   Text="OK" />
-                                                    </Border>
+                                                    <StackPanel Grid.Column="3"
+                                                                HorizontalAlignment="Right"
+                                                                VerticalAlignment="Center">
+                                                        <Border MinWidth="40"
+                                                                Padding="5,2"
+                                                                CornerRadius="8">
+                                                            <Border.Style>
+                                                                <Style TargetType="{x:Type Border}">
+                                                                    <Setter Property="Background"
+                                                                            Value="#EEF1F3" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}"
+                                                                                     Value="{x:Static models:FlowNodeStatus.Running}">
+                                                                            <Setter Property="Background"
+                                                                                    Value="#DDEBFF" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}"
+                                                                                     Value="{x:Static models:FlowNodeStatus.OK}">
+                                                                            <Setter Property="Background"
+                                                                                    Value="#DCF8F0" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}"
+                                                                                     Value="{x:Static models:FlowNodeStatus.NG}">
+                                                                            <Setter Property="Background"
+                                                                                    Value="#FFE3E3" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}"
+                                                                                     Value="{x:Static models:FlowNodeStatus.Stopped}">
+                                                                            <Setter Property="Background"
+                                                                                    Value="#FFF2CC" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock HorizontalAlignment="Center"
+                                                                       FontSize="11"
+                                                                       FontWeight="SemiBold"
+                                                                       Text="{Binding StatusText}" />
+                                                        </Border>
+                                                        <TextBlock Margin="0,4,0,0"
+                                                                   HorizontalAlignment="Right"
+                                                                   FontSize="11"
+                                                                   Foreground="#6B778C"
+                                                                   Text="{Binding ElapsedMilliseconds, StringFormat={}{0:0.0} ms}" />
+                                                    </StackPanel>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
+
+                                <ContentControl Grid.Row="3"
+                                                Content="{Binding SelectedOperator.Parameters}" />
                             </Grid>
                         </Border>
 
@@ -417,18 +619,25 @@
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
+                    <Button x:Name="btnOpenImage"
+                            Width="86"
+                            Height="34"
+                            Margin="0,0,8,0"
+                            Click="btnOpenImage_Click"
+                            Content="打开图像" />
                     <Button x:Name="btnStart"
                             Width="86"
                             Height="34"
                             Margin="0,0,8,0"
                             Click="btnStart_Click"
-                            Content="启动" />
+                            Content="启动"
+                            IsEnabled="{Binding CanRunVision}" />
                     <Button x:Name="btnStop"
                             Width="86"
                             Height="34"
                             Click="btnStop_Click"
                             Content="停止"
-                            IsEnabled="False" />
+                            IsEnabled="{Binding IsVisionRunning}" />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -442,33 +651,199 @@
                 <ColumnDefinition Width="360" />
             </Grid.ColumnDefinitions>
 
-            <controls:OperatorPaletteControl Grid.Column="0" />
-            <controls:FlowChartControl x:Name="flowChart"
-                                       Grid.Column="2"
-                                       Nodes="{Binding Nodes}"
-                                       SelectedNode="{Binding SelectedNode, Mode=TwoWay}" />
+            <controls:OperatorPaletteControl Grid.Column="0"
+                                             IsEnabled="{Binding CanEditVisionWorkflow}" />
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="*" MinHeight="180" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Background="{StaticResource PanelBackgroundBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource PanelCornerRadius}">
+                    <controls:FlowChartControl x:Name="flowChart"
+                                               CanEdit="{Binding CanEditVisionWorkflow}"
+                                               Nodes="{Binding Nodes}"
+                                               SelectedNode="{Binding SelectedNode, Mode=TwoWay}" />
+                </Border>
+
+                <GridSplitter Grid.Row="1"
+                              Height="8"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Center"
+                              Background="{StaticResource BorderBrush}"
+                              ShowsPreview="True" />
+
+                <Border Grid.Row="2"
+                        Background="#111111"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource PanelCornerRadius}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="28" />
+                        </Grid.RowDefinitions>
+                        <wfi:WindowsFormsHost x:Name="ImageViewerHost" />
+                        <Border Grid.Row="1"
+                                Background="{StaticResource PanelAltBackgroundBrush}">
+                            <TextBlock Margin="8,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource StatusFontSize}"
+                                       Foreground="#42526E"
+                                       Text="{Binding VisionStatusText}" />
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
 
             <Border Grid.Column="4"
                     Background="#F8F9FA"
                     BorderBrush="#D5DCE0"
                     BorderThickness="1"
                     CornerRadius="4">
-                <ContentControl Content="{Binding SelectedNode}"
-                                ContentTemplate="{StaticResource SelectedBlockTemplate}">
-                    <ContentControl.Style>
-                        <Style TargetType="{x:Type ContentControl}">
-                            <Setter Property="Visibility"
-                                    Value="Visible" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedNode}"
-                                             Value="{x:Null}">
-                                    <Setter Property="Visibility"
-                                            Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ContentControl.Style>
-                </ContentControl>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ContentControl Content="{Binding SelectedNode}"
+                                    IsEnabled="{Binding CanEditVisionWorkflow}"
+                                    ContentTemplate="{StaticResource SelectedBlockTemplate}">
+                        <ContentControl.Style>
+                            <Style TargetType="{x:Type ContentControl}">
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNode}"
+                                                 Value="{x:Null}">
+                                        <Setter Property="Visibility"
+                                                Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+
+                    <Border Grid.Row="1"
+                            Margin="8"
+                            Padding="10"
+                            Background="{StaticResource PanelBackgroundBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource PanelCornerRadius}">
+                        <StackPanel>
+                            <TextBlock FontSize="{StaticResource SectionFontSize}"
+                                       FontWeight="SemiBold"
+                                       Foreground="#1E2C2A"
+                                       Text="视觉结果" />
+                            <TextBlock Margin="0,8,0,0"
+                                       FontSize="{StaticResource BodyFontSize}"
+                                       Foreground="#42526E"
+                                       Text="{Binding VisionRoiText}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,6,0,0"
+                                       FontSize="{StaticResource BodyFontSize}"
+                                       Foreground="#42526E"
+                                       Text="{Binding VisionResultText}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,10,0,0"
+                                       FontSize="{StaticResource BodyFontSize}"
+                                       FontWeight="SemiBold"
+                                       Foreground="#1E2C2A"
+                                       Text="运行日志" />
+                            <ListBox MaxHeight="148"
+                                     Margin="0,6,0,0"
+                                     BorderBrush="{StaticResource BorderBrush}"
+                                     BorderThickness="1"
+                                     ItemsSource="{Binding VisionRunLogs}"
+                                     SelectedItem="{Binding SelectedVisionRunLog, Mode=TwoWay}">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="{x:Type ListBoxItem}">
+                                        <Setter Property="HorizontalContentAlignment"
+                                                Value="Stretch" />
+                                        <Setter Property="Padding"
+                                                Value="0" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:VisionRunLogItem}">
+                                        <Grid MinHeight="34"
+                                              Margin="6,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="52" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock VerticalAlignment="Center"
+                                                       FontSize="11"
+                                                       Foreground="#6B778C"
+                                                       Text="{Binding Sequence}" />
+                                            <TextBlock Grid.Column="1"
+                                                       FontSize="12"
+                                                       Foreground="#1E2C2A"
+                                                       Text="{Binding OperatorName}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Border Grid.Column="2"
+                                                    MinWidth="40"
+                                                    Padding="4,1"
+                                                    CornerRadius="7">
+                                                <Border.Style>
+                                                    <Style TargetType="{x:Type Border}">
+                                                        <Setter Property="Background"
+                                                                Value="#EEF1F3" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}"
+                                                                         Value="{x:Static models:FlowNodeStatus.Running}">
+                                                                <Setter Property="Background"
+                                                                        Value="#DDEBFF" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}"
+                                                                         Value="{x:Static models:FlowNodeStatus.OK}">
+                                                                <Setter Property="Background"
+                                                                        Value="#DCF8F0" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}"
+                                                                         Value="{x:Static models:FlowNodeStatus.NG}">
+                                                                <Setter Property="Background"
+                                                                        Value="#FFE3E3" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}"
+                                                                         Value="{x:Static models:FlowNodeStatus.Stopped}">
+                                                                <Setter Property="Background"
+                                                                        Value="#FFF2CC" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock HorizontalAlignment="Center"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold"
+                                                           Text="{Binding StatusText}" />
+                                            </Border>
+                                            <TextBlock Grid.Row="1"
+                                                       Grid.Column="1"
+                                                       Grid.ColumnSpan="2"
+                                                       Margin="0,2,0,0"
+                                                       FontSize="11"
+                                                       Foreground="#6B778C"
+                                                       Text="{Binding ElapsedMilliseconds, StringFormat={}{0:0.0} ms}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Border>
         </Grid>
     </Grid>
